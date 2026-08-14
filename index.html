@@ -7,7 +7,7 @@
 <meta name="color-scheme" content="light dark">
 <script>
 /* Applied before first paint so a stored choice never flashes the other theme.
-   No stored value = light. The OS preference is intentionally ignored. */
+   No stored value = dark. The OS preference is intentionally ignored. */
 (function(){
   try{
     var t = localStorage.getItem('ltc-theme');
@@ -17,18 +17,20 @@
 </script>
 <style>
 /* ── tokens ─────────────────────────────────────
-   Monochrome. Light is the default for everyone —
-   the OS setting is deliberately NOT followed. Dark
+   Monochrome. Dark is the default for everyone —
+   the OS setting is deliberately NOT followed. Light
    applies only when the user picks it, via
    [data-theme] on <html>, which persists.           */
 :root{
-  color-scheme:light;
-  --canvas:#FFFFFF; --surface:#F7F6F5; --raised:#F0EFED;
-  --line:#DEDCD8; --line-soft:#EBE9E6;
-  --text:#16161A; --muted:#5D5C5A; --faint:#918F8B;
-  --accent:#16161A; --accent-hover:#33323A; --accent-soft:#8B8985;
-  --accent-glow:rgba(22,22,26,.06); --on-accent:#FFFFFF;
-  --scrim:rgba(22,22,26,.34);
+  /* Dark is the base, so a first-time visitor lands on it with no attribute set
+     and no flash. Light is the override below. */
+  color-scheme:dark;
+  --canvas:#0B0B0C; --surface:#141416; --raised:#1B1B1E;
+  --line:#2B2B30; --line-soft:#1F1F23;
+  --text:#EDEBE8; --muted:#8A8886; --faint:#5C5A58;
+  --accent:#EDEBE8; --accent-hover:#FFFFFF; --accent-soft:#6A6865;
+  --accent-glow:rgba(237,235,232,.08); --on-accent:#0B0B0C;
+  --scrim:rgba(0,0,0,.64);
   --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
   --rail:264px;
   --bar:66px; /* real height of .searchbar, re-measured by syncBar() */
@@ -107,9 +109,10 @@ em,i,cite,address,dfn,var{font-style:normal}
 .icon-btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;
   stroke-linecap:round;stroke-linejoin:round}
 /* show the sun in dark mode, the moon in light mode */
-.icon-btn .i-sun{display:none}
-:root[data-theme="dark"] .icon-btn .i-sun{display:block}
-:root[data-theme="dark"] .icon-btn .i-moon{display:none}
+/* dark is the base, so the sun (switch to light) shows by default */
+.icon-btn .i-moon{display:none}
+:root[data-theme="light"] .icon-btn .i-moon{display:block}
+:root[data-theme="light"] .icon-btn .i-sun{display:none}
 
 /* ── search ─────────────────────────────────── */
 .searchbar{
@@ -550,6 +553,11 @@ dl.facts dd a:hover{border-bottom-color:var(--accent)}
   .two{grid-template-columns:1fr}
   .panel-hd,.panel-ft{padding-left:20px;padding-right:20px}
   .panel-bd{padding:20px 20px 40px}
+  /* On desktop the drawer sits over the page, so the lighter --surface separates it
+     from what is behind. On a phone it covers the whole screen with nothing to
+     separate it from, and that lift just reads as a washed-out panel. Drop it to
+     the page colour instead. */
+  .panel,.panel-ft{background:var(--canvas)}
 }
 
 /* phone */
@@ -5615,8 +5623,8 @@ const todayISO = () => new Date().toISOString().slice(0,10);
 /* ── events ─────────────────────────────────── */
 /* ── theme ──────────────────────────────────── */
 function currentTheme(){
-  // light unless the user has explicitly chosen dark — the OS is not consulted
-  return document.documentElement.getAttribute('data-theme') || 'light';
+  // dark unless the user has explicitly chosen light — the OS is not consulted
+  return document.documentElement.getAttribute('data-theme') || 'dark';
 }
 function toggleTheme(){
   const next = currentTheme()==='dark' ? 'light' : 'dark';
@@ -5747,8 +5755,8 @@ addEventListener('resize', syncBar);
 
 (async function init(){
   syncBar(); initGroups();
-  let v = 'list';
-  try{ v = localStorage.getItem('ltc-view') || 'list'; }catch(e){}
+  let v = 'grid';
+  try{ v = localStorage.getItem('ltc-view') || 'grid'; }catch(e){}
   overlay = await loadOverlay();
   rebuild(); renderRail(); setView(v);
 })();
