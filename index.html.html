@@ -1,0 +1,5755 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asset Library — Learn to Cut</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<meta name="color-scheme" content="light dark">
+<script>
+/* Applied before first paint so a stored choice never flashes the other theme.
+   No stored value = light. The OS preference is intentionally ignored. */
+(function(){
+  try{
+    var t = localStorage.getItem('ltc-theme');
+    if(t==='light'||t==='dark') document.documentElement.setAttribute('data-theme',t);
+  }catch(e){}
+})();
+</script>
+<style>
+/* ── tokens ─────────────────────────────────────
+   Monochrome. Light is the default for everyone —
+   the OS setting is deliberately NOT followed. Dark
+   applies only when the user picks it, via
+   [data-theme] on <html>, which persists.           */
+:root{
+  color-scheme:light;
+  --canvas:#FFFFFF; --surface:#F7F6F5; --raised:#F0EFED;
+  --line:#DEDCD8; --line-soft:#EBE9E6;
+  --text:#16161A; --muted:#5D5C5A; --faint:#918F8B;
+  --accent:#16161A; --accent-hover:#33323A; --accent-soft:#8B8985;
+  --accent-glow:rgba(22,22,26,.06); --on-accent:#FFFFFF;
+  --scrim:rgba(22,22,26,.34);
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
+  --rail:264px;
+  --bar:66px; /* real height of .searchbar, re-measured by syncBar() */
+}
+:root[data-theme="light"]{
+  color-scheme:light;
+  --canvas:#FFFFFF; --surface:#F7F6F5; --raised:#F0EFED;
+  --line:#DEDCD8; --line-soft:#EBE9E6;
+  --text:#16161A; --muted:#5D5C5A; --faint:#918F8B;
+  --accent:#16161A; --accent-hover:#33323A; --accent-soft:#8B8985;
+  --accent-glow:rgba(22,22,26,.06); --on-accent:#FFFFFF;
+  --scrim:rgba(22,22,26,.34);
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --canvas:#0B0B0C; --surface:#141416; --raised:#1B1B1E;
+  --line:#2B2B30; --line-soft:#1F1F23;
+  --text:#EDEBE8; --muted:#8A8886; --faint:#5C5A58;
+  --accent:#EDEBE8; --accent-hover:#FFFFFF; --accent-soft:#6A6865;
+  --accent-glow:rgba(237,235,232,.08); --on-accent:#0B0B0C;
+  --scrim:rgba(0,0,0,.64);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--canvas);color:var(--text);
+  font-family:"DM Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:inherit}
+::selection{background:var(--accent);color:var(--on-accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
+
+/* ── header ─────────────────────────────────── */
+header{
+  border-bottom:1px solid var(--line);background:var(--canvas);
+  padding:22px 28px 18px;display:flex;align-items:flex-end;
+  gap:20px;flex-wrap:wrap;
+}
+.brand .eyebrow{
+  font-size:9.5px;letter-spacing:.28em;text-transform:uppercase;
+  color:var(--faint);margin-bottom:5px;
+}
+.brand h1{
+  font-weight:500;font-size:27px;line-height:1.05;letter-spacing:-.025em;
+}
+/* belt and braces: nothing on this site renders italic, including any <em> or <i>
+   that finds its way into future markup */
+em,i,cite,address,dfn,var{font-style:normal}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.tally{font-size:11px;color:var(--faint);letter-spacing:.04em;text-align:right}
+.tally b{color:var(--muted);font-weight:500;font-variant-numeric:tabular-nums}
+.btn{
+  background:var(--accent);border:1px solid var(--accent);color:var(--on-accent);
+  padding:9px 17px;border-radius:2px;cursor:pointer;font-size:12px;
+  font-weight:500;letter-spacing:.05em;text-transform:uppercase;
+  transition:background .15s,border-color .15s;white-space:nowrap;
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+}
+.btn svg{
+  width:13px;height:13px;flex:none;fill:none;stroke:currentColor;
+  stroke-width:2;stroke-linecap:round;
+}
+.btn:hover{background:var(--accent-hover);border-color:var(--accent-hover)}
+.btn.ghost{background:transparent;border-color:var(--line);color:var(--muted)}
+.btn.ghost:hover{border-color:var(--muted);color:var(--text);background:transparent}
+
+/* ── theme toggle ───────────────────────────── */
+.icon-btn{
+  background:transparent;border:1px solid var(--line);border-radius:2px;
+  width:34px;height:34px;display:grid;place-items:center;cursor:pointer;
+  color:var(--muted);transition:border-color .15s,color .15s;flex:none;
+}
+.icon-btn:hover{border-color:var(--muted);color:var(--text)}
+.icon-btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;
+  stroke-linecap:round;stroke-linejoin:round}
+/* show the sun in dark mode, the moon in light mode */
+.icon-btn .i-sun{display:none}
+:root[data-theme="dark"] .icon-btn .i-sun{display:block}
+:root[data-theme="dark"] .icon-btn .i-moon{display:none}
+
+/* ── search ─────────────────────────────────── */
+.searchbar{
+  position:sticky;top:0;z-index:30;background:var(--canvas);
+  border-bottom:1px solid var(--line);padding:14px 28px;
+  display:flex;gap:12px;align-items:center;
+}
+.search-wrap{position:relative;flex:1;max-width:640px}
+.search-wrap svg{
+  position:absolute;left:13px;top:50%;transform:translateY(-50%);
+  width:14px;height:14px;stroke:var(--faint);fill:none;stroke-width:1.6;
+}
+#q{
+  width:100%;background:var(--surface);border:1px solid var(--line);
+  border-radius:2px;padding:10px 14px 10px 36px;font-size:13.5px;
+  transition:border-color .15s;
+}
+#q:focus{border-color:var(--accent);outline:none}
+#q::placeholder{color:var(--faint)}
+select.sort{
+  background:var(--surface);border:1px solid var(--line);border-radius:2px;
+  padding:10px 12px;font-size:12px;color:var(--muted);cursor:pointer;
+  /* pushes the sort and the view toggle to the right edge, so they line up
+     under Add asset in the header instead of trailing the search field */
+  margin-left:auto;
+}
+#railToggle{display:none}
+
+/* list / grid switch */
+.seg{display:flex;border:1px solid var(--line);border-radius:2px;overflow:hidden;flex:none}
+.seg-btn{
+  background:transparent;border:none;padding:0 11px;height:38px;
+  display:grid;place-items:center;cursor:pointer;color:var(--faint);
+  transition:background .15s,color .15s;
+}
+.seg-btn+.seg-btn{border-left:1px solid var(--line)}
+.seg-btn:hover{color:var(--text)}
+.seg-btn[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.seg-btn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.7;
+  stroke-linecap:round;stroke-linejoin:round}
+
+/* ── layout ─────────────────────────────────── */
+.shell{display:grid;grid-template-columns:var(--rail) 1fr;align-items:start}
+.rail{
+  border-right:1px solid var(--line);padding:24px 20px 60px;
+  position:sticky;top:var(--bar);max-height:calc(100dvh - var(--bar));overflow-y:auto;
+}
+.rail-done{display:none}
+.rail::-webkit-scrollbar,.results::-webkit-scrollbar{width:7px}
+.rail::-webkit-scrollbar-thumb,.results::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+/* ── collapsible filter groups ──────────────── */
+.grp{border-bottom:1px solid var(--line-soft)}
+.grp summary{
+  display:grid;grid-template-columns:1fr auto auto;gap:9px;align-items:center;
+  list-style:none;cursor:pointer;padding:13px 0;user-select:none;
+}
+.grp summary::-webkit-details-marker{display:none}
+.grp summary::marker{content:""}
+.grp summary .lbl{
+  font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--faint);font-weight:500;
+}
+.grp[open] summary .lbl{color:var(--muted)}
+.grp summary:hover .lbl{color:var(--text)}
+/* pinned open on desktop: no chevron, nothing to click, label reads as a heading */
+.grp.pinned summary{cursor:default;pointer-events:none}
+.grp.pinned .chev{display:none}
+.grp.pinned summary .lbl{color:var(--muted)}
+.grp .chev{
+  width:13px;height:13px;fill:none;stroke:var(--faint);stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round;transition:transform .2s;
+}
+.grp[open] .chev{transform:rotate(180deg)}
+/* count of active filters, so a collapsed group still declares itself */
+.grp .badge{
+  display:none;place-items:center;font-family:var(--mono);font-size:9px;
+  min-width:16px;height:16px;padding:0 4px;border-radius:8px;
+  background:var(--accent);color:var(--on-accent);
+}
+.grp .badge.on{display:grid}
+.grp-bd{padding:2px 0 17px}
+.rail-ft{padding:18px 0 0}
+
+/* the pillar spine that used to live here moved to the tab strip above the grid */
+
+/* source list — where an asset physically lives */
+.sources{display:flex;flex-direction:column;gap:1px}
+.src-row{
+  display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;
+  padding:7px 8px;width:100%;text-align:left;cursor:pointer;
+  background:none;border:1px solid transparent;border-radius:2px;
+  transition:background .15s,border-color .15s;
+}
+.src-row .code{
+  font-family:var(--mono);font-size:9px;letter-spacing:.06em;color:var(--faint);
+  border:1px solid var(--line);border-radius:2px;padding:2px 4px;
+}
+.src-row .nm{font-size:12.5px;color:var(--muted);transition:color .15s}
+.src-row .ct{font-family:var(--mono);font-size:10.5px;color:var(--faint);font-variant-numeric:tabular-nums}
+.src-row:hover{background:var(--surface)}
+.src-row:hover .nm{color:var(--text)}
+.src-row[aria-pressed="true"]{background:var(--accent);border-color:var(--accent)}
+.src-row[aria-pressed="true"] .nm,
+.src-row[aria-pressed="true"] .ct{color:var(--on-accent)}
+.src-row[aria-pressed="true"] .code{color:var(--on-accent);border-color:var(--on-accent);opacity:.55}
+/* declared but still empty: visible as a slot, clearly not yet somewhere to go */
+.src-row.unused{cursor:default;opacity:.4}
+.src-row.unused:hover{background:none;border-color:transparent}
+
+/* pillar tabs — the browse-by-theme axis. One at a time, never combined. */
+.srctabs{
+  display:flex;gap:2px;align-items:center;
+  overflow-x:auto;overflow-y:hidden;scrollbar-width:none;
+  border-bottom:1px solid var(--line-soft);
+  padding:4px 0 0;
+  /* Without this the strip's full laid-out width becomes the column's minimum,
+     since a flex item defaults to min-width:auto. The column would then push past
+     the viewport and overflow-x:auto here would never engage. */
+  min-width:0;
+}
+.srctabs::-webkit-scrollbar{display:none}
+.src-tab{
+  display:inline-flex;align-items:baseline;gap:7px;flex:none;
+  padding:7px 12px 9px;cursor:pointer;white-space:nowrap;
+  background:none;border:none;border-bottom:2px solid transparent;
+  color:var(--muted);font-size:12.5px;
+  transition:color .15s,border-color .15s;
+}
+.src-tab .ct{
+  font-family:var(--mono);font-size:10px;color:var(--faint);
+  font-variant-numeric:tabular-nums;transition:color .15s;
+}
+.src-tab:hover{color:var(--text)}
+.src-tab[aria-selected="true"]{color:var(--text);border-bottom-color:var(--accent)}
+.src-tab[aria-selected="true"] .ct{color:var(--muted)}
+.src-tab.unused{opacity:.38;cursor:default}
+.src-tab.unused:hover{color:var(--muted)}
+
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{
+  border:1px solid var(--line);background:transparent;color:var(--muted);
+  padding:4px 9px;border-radius:2px;font-size:11px;cursor:pointer;
+  transition:.15s;letter-spacing:.02em;
+}
+.chip:hover{border-color:var(--muted);color:var(--text)}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.chip .n{font-family:var(--mono);font-size:9.5px;opacity:.62;margin-left:5px}
+/* flags read as outlined rather than solid, so they stay
+   distinguishable from value filters without using colour */
+.chip.flag[aria-pressed="true"]{
+  background:var(--accent-glow);border-color:var(--accent);
+  color:var(--text);box-shadow:inset 0 0 0 1px var(--accent);
+}
+#clearAll{
+  background:none;border:none;color:var(--faint);font-size:11px;cursor:pointer;
+  text-decoration:underline;text-underline-offset:3px;padding:0;
+}
+#clearAll:hover{color:var(--accent)}
+
+/* ── results ────────────────────────────────── */
+.results{padding:6px 28px 80px;min-height:60vh;min-width:0}
+/* Picking a different pillar swaps the whole set in one go, which reads as a jump.
+   A short fade and rise on the container makes the change legible. Deliberately on
+   the container and not on each card: staggering 200 cards would jank on a phone. */
+#list.swap{animation:listIn .26s cubic-bezier(.2,.7,.2,1)}
+@keyframes listIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+.resbar{
+  display:flex;align-items:baseline;gap:10px;padding:14px 2px 10px;
+  border-bottom:1px solid var(--line-soft);margin-bottom:4px;
+}
+.resbar .n{font-family:var(--mono);font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.resbar .lbl{font-size:11px;color:var(--faint);letter-spacing:.06em;text-transform:uppercase}
+
+.row{
+  display:grid;grid-template-columns:2px 74px 1fr auto;gap:0 14px;
+  align-items:center;padding:12px 8px 12px 0;width:100%;
+  background:none;border:none;border-bottom:1px solid var(--line-soft);
+  text-align:left;cursor:pointer;transition:background .13s;
+}
+.row:hover{background:var(--surface)}
+.row .tick{
+  align-self:stretch;background:var(--line-soft);border-radius:2px;
+  transition:background .15s;
+}
+.row:hover .tick{background:var(--accent)}
+.row.untagged .tick{background:transparent;border-left:1px dashed var(--line)}
+.row .rid{
+  font-family:var(--mono);font-size:10.5px;color:var(--faint);letter-spacing:.02em;
+}
+.row .main{min-width:0}
+.row .ttl{
+  font-size:13.5px;line-height:1.35;margin-bottom:3px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+.row .ttl .star{color:var(--accent);font-size:11px;margin-right:5px;vertical-align:1px}
+.row .meta{
+  font-size:11px;color:var(--faint);display:flex;flex-wrap:wrap;
+  gap:0 7px;align-items:center;
+}
+.row .meta span{white-space:nowrap}
+.row .meta .sep{color:var(--line);}
+.row .right{display:flex;align-items:center;gap:8px;justify-self:end}
+.stat{
+  font-family:var(--mono);font-size:11px;color:var(--muted);
+  font-variant-numeric:tabular-nums;text-align:right;min-width:52px;
+}
+.stat small{display:block;font-size:8.5px;color:var(--faint);letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
+.tag{
+  font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;
+  border:1px solid var(--line);color:var(--faint);padding:3px 7px;
+  border-radius:2px;white-space:nowrap;
+}
+.tag.hold{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.tag.ever{border-color:var(--accent-soft);color:var(--accent)}
+
+/* ── grid view ──────────────────────────────── */
+.grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(212px,1fr));
+  gap:24px 18px;padding-top:16px;
+}
+.card{
+  display:flex;flex-direction:column;gap:9px;width:100%;
+  background:none;border:none;padding:0;text-align:left;cursor:pointer;
+}
+.thumb{
+  position:relative;aspect-ratio:16/9;overflow:hidden;
+  background:var(--raised);border:1px solid var(--line-soft);border-radius:2px;
+  display:grid;place-items:center;transition:border-color .15s;
+}
+.card:hover .thumb{border-color:var(--muted)}
+.card.untagged .thumb{border-style:dashed;border-color:var(--line)}
+.thumb img{
+  position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;display:block;
+}
+.thumb img.failed{display:none} /* reveals the placeholder underneath */
+/* Carousels are 4:5 Instagram portraits. A 16:9 tile keeps only a band across the
+   middle, which on a text-led cover is the one thing you cannot afford to lose.
+   `contain` rather than `cover` so a cover that is not exactly 4:5 letterboxes
+   against the tile instead of being cropped anyway. */
+.card.is-carousel .thumb{aspect-ratio:4/5}
+.card.is-carousel .thumb img{object-fit:contain}
+
+/* Logos are transparent PNGs in both black and white artwork, so neither the light
+   nor the dark surface can show them all: a white mark vanishes on light, a black
+   one on dark. A fixed mid-grey checkerboard is legible for both and is the
+   conventional signal that the file has an alpha channel. Deliberately NOT
+   theme-aware, since the point is that it sits between the two. */
+.card.is-logo .thumb,.panel-thumb.is-logo{
+  background-color:#8C8C8C;
+  background-image:
+    linear-gradient(45deg,rgba(0,0,0,.10) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.10) 75%),
+    linear-gradient(45deg,rgba(0,0,0,.10) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.10) 75%);
+  background-size:18px 18px;
+  background-position:0 0,9px 9px;
+  border-color:var(--line);
+}
+/* contain plus padding: a logo must never be cropped, and it needs breathing room */
+.card.is-logo .thumb img,.panel-thumb.is-logo img{object-fit:contain;padding:11%}
+.card.is-logo .ph,.panel-thumb.is-logo .ph{color:#2A2A2A}
+.card.is-logo .ph .code{border-color:rgba(0,0,0,.3)}
+/* placeholder for anything with no derivable image */
+.ph{display:flex;flex-direction:column;align-items:center;gap:5px;color:var(--faint)}
+.ph .code{
+  font-family:var(--mono);font-size:10px;letter-spacing:.12em;
+  border:1px solid var(--line);border-radius:2px;padding:3px 6px;
+}
+.ph .lbl{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase}
+.thumb .dur,.thumb .star{
+  position:absolute;background:var(--canvas);border:1px solid var(--line);
+  border-radius:2px;padding:2px 5px;
+}
+.thumb .dur{right:6px;bottom:6px;font-family:var(--mono);font-size:9.5px;color:var(--muted)}
+.thumb .star{left:6px;top:6px;font-size:10px;color:var(--text);line-height:1.2}
+.card .ttl{
+  font-size:12.5px;line-height:1.36;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+.card .meta{font-size:10.5px;color:var(--faint);display:flex;flex-wrap:wrap;gap:0 6px}
+.card .meta span{white-space:nowrap}
+.card .meta .sep{color:var(--line)}
+.card .tags{display:flex;flex-wrap:wrap;gap:5px}
+
+.empty{padding:64px 8px;max-width:420px}
+.empty p{font-size:17px;font-weight:500;letter-spacing:-.015em;color:var(--text);margin-bottom:8px}
+.empty small{color:var(--faint);font-size:12.5px;line-height:1.6;display:block}
+
+/* ── panel ──────────────────────────────────── */
+.scrim{
+  position:fixed;inset:0;background:var(--scrim);z-index:60;
+  opacity:0;pointer-events:none;transition:opacity .22s;
+}
+.scrim.on{opacity:1;pointer-events:auto}
+.panel{
+  position:fixed;top:0;right:0;bottom:0;width:min(560px,100%);
+  background:var(--surface);border-left:1px solid var(--line);z-index:70;
+  transform:translateX(101%);transition:transform .28s cubic-bezier(.4,0,.2,1);
+  display:flex;flex-direction:column;
+}
+.panel.on{transform:none}
+.panel-hd{
+  padding:20px 26px;border-bottom:1px solid var(--line);
+  display:flex;align-items:flex-start;gap:14px;
+}
+.panel-hd .pid{font-family:var(--mono);font-size:10.5px;color:var(--accent);letter-spacing:.06em;margin-bottom:7px}
+.panel-hd h3{
+  font-weight:500;font-size:18px;line-height:1.3;letter-spacing:-.018em;
+}
+.x{
+  background:none;border:none;color:var(--faint);font-size:22px;
+  cursor:pointer;line-height:1;padding:2px 4px;margin-left:auto;
+}
+.x:hover{color:var(--text)}
+.panel-bd{padding:22px 26px 40px;overflow-y:auto;flex:1}
+.panel-ft{
+  padding:16px 26px;border-top:1px solid var(--line);
+  display:flex;gap:10px;background:var(--surface);
+}
+.panel-ft .btn{flex:1;text-align:center}
+
+/* hero thumbnail at the top of the detail drawer */
+.panel-thumb{
+  position:relative;aspect-ratio:16/9;overflow:hidden;margin-bottom:22px;
+  background:var(--raised);border:1px solid var(--line-soft);border-radius:2px;
+  display:grid;place-items:center;
+}
+.panel-thumb img{
+  position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;display:block;
+}
+.panel-thumb img.failed{display:none}
+/* same reasoning as the card: the drawer is where you go to actually read a cover */
+.panel-thumb.is-carousel{aspect-ratio:4/5}
+.panel-thumb.is-carousel img{object-fit:contain}
+
+dl.facts{display:grid;grid-template-columns:110px 1fr;gap:0}
+dl.facts dt{
+  font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);
+  padding:11px 0;border-bottom:1px solid var(--line-soft);
+}
+dl.facts dd{padding:11px 0;border-bottom:1px solid var(--line-soft);font-size:13px;word-break:break-word}
+/* the faint colour alone marks an empty value, no italic anywhere on this site */
+dl.facts dd.none{color:var(--faint)}
+dl.facts dd a{color:var(--accent);text-decoration:none;border-bottom:1px solid var(--accent-glow)}
+dl.facts dd a:hover{border-bottom-color:var(--accent)}
+.notebox{
+  margin-top:22px;padding:15px 17px;background:var(--raised);
+  border-left:2px solid var(--accent);font-size:13px;line-height:1.6;color:var(--muted);
+}
+.alert{
+  margin-bottom:20px;padding:12px 15px;border:1px solid var(--accent);
+  background:var(--accent-glow);font-size:12.5px;line-height:1.55;
+}
+.alert b{display:block;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:5px}
+
+/* ── form ───────────────────────────────────── */
+.field{margin-bottom:17px}
+.field label{
+  display:block;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--faint);margin-bottom:7px;
+}
+.field input,.field select,.field textarea{
+  width:100%;background:var(--canvas);border:1px solid var(--line);
+  border-radius:2px;padding:9px 11px;font-size:13px;
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);outline:none}
+.field textarea{resize:vertical;min-height:74px;line-height:1.55}
+.field .hint{font-size:11px;color:var(--faint);margin-top:6px;line-height:1.45}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.err{color:var(--accent);font-size:11.5px;margin-top:6px;display:none}
+.err.on{display:block}
+
+.toast{
+  position:fixed;bottom:26px;left:50%;transform:translate(-50%,80px);
+  background:var(--accent);color:var(--on-accent);padding:11px 22px;border-radius:2px;
+  font-size:12.5px;letter-spacing:.04em;z-index:90;opacity:0;
+  transition:.26s cubic-bezier(.4,0,.2,1);pointer-events:none;
+}
+.toast.on{transform:translate(-50%,0);opacity:1}
+
+/* ── responsive ─────────────────────────────── */
+
+/* very wide: cap list rows so lines stay scannable, but let the grid
+   use the full width — capping it just strands whitespace on the right */
+@media (min-width:1600px){
+  .results:not(.is-grid){max-width:1180px}
+  .is-grid .grid{grid-template-columns:repeat(auto-fill,minmax(238px,1fr))}
+}
+
+/* laptop: tighten the rail before it starts squeezing the list */
+@media (max-width:1180px){
+  :root{--rail:224px}
+  header,.searchbar,.results{padding-left:20px;padding-right:20px}
+  .rail{padding:22px 16px 60px}
+}
+
+/* tablet and below: rail becomes a full-screen sheet */
+@media (max-width:880px){
+  header{padding:16px 18px 13px;gap:14px}
+  .brand h1{font-size:23px}
+  .tally{font-size:10.5px}
+  .searchbar{padding:12px 18px;gap:10px;flex-wrap:wrap}
+  .search-wrap{max-width:none;flex:1 1 100%;order:-1} /* search on its own line, above the controls */
+  /* auto margin here and nowhere else on the row, so the hamburger collects all the
+     free space and lands hard right against the title. .hdr-right has to give up its
+     own auto margin or flexbox splits the gap between the two. */
+  #railToggle{display:grid;margin-left:auto}
+  .hdr-right{margin-left:0}
+  /* the Filters button used to occupy the left of this row. With it promoted to the
+     header, the sort's auto margin just left a gap where it had been, so let the
+     sort take that space instead and keep the view toggle pinned right. */
+  select.sort{margin-left:0;flex:1}
+  .shell{grid-template-columns:1fr}
+  /* A left drawer rather than a full-screen takeover, so the grid stays visible
+     behind it and the scrim reads as "tap here to dismiss". Slides on transform,
+     which is why display stays block: display:none cannot animate. z-index sits
+     above the scrim (60) and below the detail panel (70). */
+  .rail{
+    position:fixed;top:0;bottom:0;left:0;right:auto;z-index:65;
+    width:min(84vw,320px);background:var(--canvas);
+    border-right:1px solid var(--line);max-height:none;overflow-y:auto;
+    display:block;padding:0 18px 90px;
+    transform:translateX(-100%);visibility:hidden;
+    transition:transform .28s cubic-bezier(.2,.7,.2,1),visibility .28s;
+  }
+  .rail.open{transform:none;visibility:visible}
+  .rail-done{
+    display:flex;position:sticky;top:0;z-index:2;background:var(--canvas);
+    align-items:center;justify-content:space-between;gap:12px;
+    padding:16px 0 14px;margin-bottom:6px;border-bottom:1px solid var(--line);
+  }
+  .rail-done .ttl{font-size:13px;font-weight:500;letter-spacing:-.01em}
+  .grp:first-of-type{border-top:none}
+  .results{padding:6px 18px 80px}
+  .row{grid-template-columns:2px 1fr;gap:0 12px}
+  .row .rid{display:none}
+  .row .right{grid-column:2;justify-self:start;margin-top:8px}
+  .two{grid-template-columns:1fr}
+  .panel-hd,.panel-ft{padding-left:20px;padding-right:20px}
+  .panel-bd{padding:20px 20px 40px}
+}
+
+/* phone */
+@media (max-width:560px){
+  header{padding:14px 15px 12px;gap:12px}
+  .brand h1{font-size:21px}
+  .hdr-right{gap:9px;width:100%;margin-left:0}
+  .tally{order:3;margin-left:auto;text-align:right}
+  .searchbar{padding:11px 15px}
+  .results{padding:6px 15px 72px}
+  .rail{padding:0 15px 90px}
+  .row .ttl{font-size:13px}
+  .row .meta{font-size:10.5px}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(142px,1fr));gap:18px 12px}
+  .card .ttl{font-size:12px}
+  dl.facts{grid-template-columns:96px 1fr}
+  dl.facts dt{font-size:9px;letter-spacing:.12em}
+  .panel-ft{flex-wrap:wrap}
+  .panel-ft .btn{flex:1 1 100%}
+}
+
+/* coarse pointers get larger hit targets */
+@media (pointer:coarse){
+  .chip{padding:7px 11px;font-size:11.5px}
+  .src-row{padding-top:10px;padding-bottom:10px}
+  .src-tab{padding-top:9px;padding-bottom:11px}
+  .icon-btn{width:38px;height:38px}
+}
+
+/* ── splash ─────────────────────────────────────
+   Shows on every load, holds ~4.2s, then clears.
+   The hide is a CSS animation rather than JS so a
+   script error can never trap anyone behind it.   */
+.splash{
+  position:fixed;inset:0;z-index:200;overflow:hidden;
+  background:#000;display:grid;place-items:center;
+  /* without this the figure's screen blend reaches past the splash and
+     composites against the library underneath */
+  isolation:isolate;
+  /* everything has settled by ~2.4s, so the hold ends right after rather than
+     sitting on a static frame for another second */
+  animation:splashOut .55s cubic-bezier(.4,0,.2,1) 2.95s forwards;
+}
+.splash.skip{animation:splashOut .3s cubic-bezier(.4,0,.2,1) forwards}
+@keyframes splashOut{to{opacity:0;visibility:hidden;pointer-events:none}}
+
+.splash-stage{position:absolute;inset:0}
+/* The source photo is a lit marble figure on a near-black field. Screen blend
+   drops that field out against our black, so the statue reads as cut out and
+   can pass IN FRONT of the wordmark without any masking. */
+.splash-figure{
+  position:absolute;left:50%;bottom:0;height:112vh;width:auto;max-width:none;
+  mix-blend-mode:screen;filter:grayscale(1) contrast(1.05);
+  /* feathers the photo's rectangle away so only the lit figure reads */
+  -webkit-mask-image:radial-gradient(ellipse 60% 72% at 50% 66%, #000 42%, transparent 100%);
+  mask-image:radial-gradient(ellipse 60% 72% at 50% 66%, #000 42%, transparent 100%);
+  opacity:0;transform:translateX(-50%) translateY(34px) scale(1.05);
+  animation:spFig 2.25s cubic-bezier(.16,.72,.16,1) .12s forwards;
+}
+@keyframes spFig{to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}
+
+/* logo and caption as one centred stack, so the caption can never ride up
+   into the monogram whatever the logo scales to */
+.splash-mark{
+  position:absolute;left:50%;top:27%;transform:translate(-50%,-50%);
+  display:flex;flex-direction:column;align-items:center;gap:18px;
+}
+.splash-word{
+  width:min(185px,36vw);
+  opacity:0;transform:translateY(14px);
+  animation:spWord 1s cubic-bezier(.2,.7,.2,1) .7s forwards;
+}
+@keyframes spWord{to{opacity:1;transform:translateY(0)}}
+.splash-cap{
+  font-size:9px;letter-spacing:.44em;text-transform:uppercase;color:#8A8886;
+  opacity:0;animation:spFade .8s ease 1.45s forwards;
+}
+/* deepens the edges so the figure emerges from black rather than sitting on it */
+.splash-vig{
+  position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 78% 62% at 50% 46%, transparent 0%, rgba(0,0,0,.55) 62%, #000 100%);
+}
+.splash-skip{
+  position:absolute;bottom:34px;left:0;right:0;text-align:center;
+  font-size:9.5px;letter-spacing:.26em;text-transform:uppercase;color:#55524E;
+  opacity:0;animation:spFade .7s ease 1.9s forwards;
+}
+@keyframes spFade{to{opacity:1}}
+
+/* architecture draws itself in, then the two forms travel */
+.sp-col{opacity:0;transform:translateY(16px);animation:spRise .95s cubic-bezier(.2,.7,.2,1) .15s forwards}
+@keyframes spRise{to{opacity:1;transform:none}}
+.sp-arch{stroke-dasharray:1000;stroke-dashoffset:1000;animation:spDraw 1.5s cubic-bezier(.35,.6,.2,1) .55s forwards}
+@keyframes spDraw{to{stroke-dashoffset:0}}
+.sp-line{opacity:0;animation:spFade .9s ease .55s forwards}
+/* the whole point: they decelerate hard and stop short of each other */
+.sp-reach-l{transform:translateX(-190px);animation:spReachL 2.4s cubic-bezier(.1,.72,.12,1) .95s forwards}
+.sp-reach-r{transform:translateX(190px);animation:spReachR 2.4s cubic-bezier(.1,.72,.12,1) .95s forwards}
+@keyframes spReachL{to{transform:translateX(0)}}
+@keyframes spReachR{to{transform:translateX(0)}}
+.sp-spark{opacity:0;animation:spSpark 1.7s ease 2.55s forwards}
+@keyframes spSpark{0%{opacity:0}45%{opacity:1}100%{opacity:.6}}
+
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important;animation:none!important}
+  /* splash shows fully formed, holds briefly, then still clears itself */
+  .splash *{opacity:1!important;transform:none!important}
+  .sp-arch{stroke-dashoffset:0!important}
+  .splash{animation:splashOut .4s ease 1.6s forwards!important}
+}
+</style>
+
+<div class="splash" id="splash" role="presentation">
+  <div class="splash-stage">
+    <div class="splash-mark">
+      <img class="splash-word" src="images/lg-002-lockup-white.webp" alt="Learn to Cut"
+           onerror="this.style.display='none'">
+      <div class="splash-cap">Asset Library</div>
+    </div>
+    <img class="splash-figure" src="images/intro-angel.webp" alt="" aria-hidden="true"
+         onerror="this.style.display='none'">
+    <div class="splash-vig"></div>
+  </div>
+  <div class="splash-skip">Click anywhere to skip</div>
+</div>
+<script>
+/* The CSS animation is what actually hides the splash, so it clears even if
+   anything below throws. This only adds skip-on-input and removes the node
+   afterwards so it can never intercept a click. */
+(function(){
+  var s = document.getElementById('splash');
+  if(!s) return;
+  var gone = false;
+  function drop(){
+    if(gone) return; gone = true;
+    s.classList.add('skip');
+    setTimeout(function(){ s.remove(); }, 340);
+  }
+  s.addEventListener('click', drop);
+  addEventListener('keydown', drop, {once:true});
+  setTimeout(function(){ if(!gone){ gone = true; s.remove(); } }, 3700);
+})();
+</script>
+
+<header>
+  <div class="brand">
+    <div class="eyebrow">Learn to Cut</div>
+    <h1>Asset Library</h1>
+  </div>
+  <!-- a direct child of the header, not of .hdr-right, so on a phone it sits on the
+       title row while the theme and Add asset buttons wrap to the row below -->
+  <button class="icon-btn" id="railToggle" aria-label="Open filters" aria-expanded="false"
+          aria-controls="rail">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+  </button>
+  <div class="hdr-right">
+    <div class="tally"><b id="tallyN">—</b> assets<br><span id="tallyHold">—</span></div>
+    <button class="icon-btn" id="themeBtn" title="Switch theme" aria-label="Switch theme">
+      <svg class="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8.2 8.2 0 0 1 9.5 4a8.4 8.4 0 1 0 10.5 10.5z"/></svg>
+      <svg class="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.4v2.2M12 19.4v2.2M2.4 12h2.2M19.4 12h2.2M5.2 5.2l1.6 1.6M17.2 17.2l1.6 1.6M18.8 5.2l-1.6 1.6M6.8 17.2l-1.6 1.6"/></svg>
+    </button>
+    <button class="btn" id="addBtn">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      Add asset
+    </button>
+  </div>
+</header>
+
+<div class="searchbar">
+  <div class="search-wrap">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+    <input id="q" type="search" placeholder="Search titles, notes, sources, categories, locations…" autocomplete="off">
+  </div>
+  <select class="sort" id="sort">
+    <option value="id">Asset ID</option>
+    <option value="views">Most viewed</option>
+    <option value="posted">Newest posted</option>
+    <option value="title">Title A–Z</option>
+  </select>
+  <div class="seg" id="viewSeg" role="group" aria-label="View">
+    <button class="seg-btn" data-view="list" aria-pressed="true" title="List view" aria-label="List view">
+      <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+    <button class="seg-btn" data-view="grid" aria-pressed="false" title="Grid view" aria-label="Grid view">
+      <svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg>
+    </button>
+  </div>
+</div>
+
+<div class="shell">
+  <aside class="rail" id="rail">
+    <div class="rail-done">
+      <span class="ttl">Filters</span>
+      <button class="btn" id="railDone">Show results</button>
+    </div>
+    <details class="grp" data-grp="source" open>
+      <summary><span class="lbl">Source</span><span class="badge"></span>
+        <svg class="chev" viewBox="0 0 24 24"><path d="M6 9.5l6 6 6-6"/></svg></summary>
+      <div class="grp-bd"><div class="sources" id="sources"></div></div>
+    </details>
+    <details class="grp" data-grp="funnel" open>
+      <summary><span class="lbl">Funnel use</span><span class="badge"></span>
+        <svg class="chev" viewBox="0 0 24 24"><path d="M6 9.5l6 6 6-6"/></svg></summary>
+      <div class="grp-bd"><div class="chips" id="f-funnel"></div></div>
+    </details>
+    <details class="grp" data-grp="rights" open>
+      <summary><span class="lbl">Rights</span><span class="badge"></span>
+        <svg class="chev" viewBox="0 0 24 24"><path d="M6 9.5l6 6 6-6"/></svg></summary>
+      <div class="grp-bd"><div class="chips" id="f-rights"></div></div>
+    </details>
+    <details class="grp" data-grp="status">
+      <summary><span class="lbl">Status</span><span class="badge"></span>
+        <svg class="chev" viewBox="0 0 24 24"><path d="M6 9.5l6 6 6-6"/></svg></summary>
+      <div class="grp-bd"><div class="chips" id="f-status"></div></div>
+    </details>
+    <details class="grp" data-grp="type">
+      <summary><span class="lbl">Asset type</span><span class="badge"></span>
+        <svg class="chev" viewBox="0 0 24 24"><path d="M6 9.5l6 6 6-6"/></svg></summary>
+      <div class="grp-bd"><div class="chips" id="f-type"></div></div>
+    </details>
+    <details class="grp" data-grp="category">
+      <summary><span class="lbl">Category</span><span class="badge"></span>
+        <svg class="chev" viewBox="0 0 24 24"><path d="M6 9.5l6 6 6-6"/></svg></summary>
+      <div class="grp-bd"><div class="chips" id="f-category"></div></div>
+    </details>
+    <details class="grp" data-grp="location">
+      <summary><span class="lbl">Location</span><span class="badge"></span>
+        <svg class="chev" viewBox="0 0 24 24"><path d="M6 9.5l6 6 6-6"/></svg></summary>
+      <div class="grp-bd"><div class="chips" id="f-location"></div></div>
+    </details>
+    <details class="grp" data-grp="flags">
+      <summary><span class="lbl">Flags</span><span class="badge"></span>
+        <svg class="chev" viewBox="0 0 24 24"><path d="M6 9.5l6 6 6-6"/></svg></summary>
+      <div class="grp-bd"><div class="chips" id="f-flags"></div></div>
+    </details>
+    <div class="rail-ft"><button id="clearAll">Clear all filters</button></div>
+  </aside>
+
+  <main class="results">
+    <!-- Pillar lives here rather than in the filter rail: it is the browse-by-theme
+         axis, and tabs say "one at a time" on sight, which a checkbox list never
+         will. Source stays in the rail as the primary navigation spine. -->
+    <div class="srctabs" id="pilltabs" role="tablist" aria-label="Pillar"></div>
+    <div class="resbar"><span class="n" id="count">—</span><span class="lbl" id="countLbl">assets</span></div>
+    <div id="list"></div>
+  </main>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<div class="panel" id="panel" role="dialog" aria-modal="true" aria-label="Asset details"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const SEED = [
+{
+"id": "YT-001",
+"title": "Learn To Cut - Textured Layers Made Easy Long Hair (Barber Tutorial)",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=LQApxmIVUYM",
+"files": "",
+"duration": "9:58",
+"views": 6800,
+"posted": "2026-06-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-002",
+"title": "Slick Back Fade Barber Tutorial",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=40eOU2xVDSU",
+"files": "",
+"duration": "11:44",
+"views": 10000,
+"posted": "2026-05-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-003",
+"title": "Curly Haircut + Taper Fade Tutorial",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=mlmp2r8jC-Y",
+"files": "",
+"duration": "11:40",
+"views": 5800,
+"posted": "2026-04-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-004",
+"title": "Crop Mullet Taper Fade Tutorial",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=BZPJv9MZYSE",
+"files": "",
+"duration": "13:54",
+"views": 7300,
+"posted": "2026-04-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-005",
+"title": "I Went to Shanghai... and Found the Future of Barbering",
+"type": "Video - long-form",
+"category": "Travel / Founder Vlog",
+"pillar": "The Climb",
+"funnel": "Attract",
+"location": "Shanghai",
+"link": "https://www.youtube.com/watch?v=PiFZJLYw4ys",
+"files": "",
+"duration": "9:13",
+"views": 2100,
+"posted": "2026-02-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Template for future travel episodes",
+"added": "2026-07-14"
+},
+{
+"id": "YT-006",
+"title": "Textured Crop Taper Tutorial",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=LIHvK9JGI1s",
+"files": "",
+"duration": "10:16",
+"views": 8000,
+"posted": "2026-01-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-007",
+"title": "Bleach Blonde Textured Crop Tutorial",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=1SKy_RRCKUQ",
+"files": "",
+"duration": "9:47",
+"views": 6400,
+"posted": "2026-01-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-008",
+"title": "The Wet Look Middle Part | Best Men's Hairstyle 2025",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=LX7B_khLU04",
+"files": "",
+"duration": "9:56",
+"views": 5200,
+"posted": "2025-12-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-009",
+"title": "Medium Length Haircut That Looks Good While Growing Hair Out",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=YGV3l2xXIcA",
+"files": "",
+"duration": "9:50",
+"views": 4600,
+"posted": "2025-12-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-010",
+"title": "Johnny Depp 90's Inspired Haircut Tutorial For Barbers",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=Kan-FQ9fy6A",
+"files": "",
+"duration": "11:13",
+"views": 5200,
+"posted": "2025-12-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-011",
+"title": "Scissor Cut + Taper Tutorial - Step-by-Step",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=YXJ0vcOQdnw",
+"files": "",
+"duration": "9:33",
+"views": 4400,
+"posted": "2025-12-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-012",
+"title": "Do This to Get Middle Part Hairstyle in 2025 (Easy Barber Tutorial)",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=v2IYe6yn5nA",
+"files": "",
+"duration": "10:48",
+"views": 8600,
+"posted": "2025-11-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-013",
+"title": "The Best Men's Haircut for Fall 2025 (The Brush Back)",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=nnBBWr9gns4",
+"files": "",
+"duration": "10:01",
+"views": 5000,
+"posted": "2025-11-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-014",
+"title": "Low Taper | Scissor Trim Tutorial",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=RdVp6yWlWxY",
+"files": "",
+"duration": "9:30",
+"views": 2500,
+"posted": "2025-11-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-015",
+"title": "How to Do a Textured Scissor Cut for Men (Step by Step)",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=Ezlx9ptlsdI",
+"files": "",
+"duration": "8:45",
+"views": 5800,
+"posted": "2025-11-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-016",
+"title": "Easy Curly Taper Fade Tutorial",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=cgs1GPzOyFg",
+"files": "",
+"duration": "8:45",
+"views": 2900,
+"posted": "2025-10-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-017",
+"title": "Textured Brush Back with Taper | Step by Step",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=ZE6czfqYycU",
+"files": "",
+"duration": "10:33",
+"views": 6800,
+"posted": "2025-10-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-018",
+"title": "Burst Fade Breakdown | Step-by-Step",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=Hs5zhpuGdjU",
+"files": "",
+"duration": "9:47",
+"views": 3100,
+"posted": "2025-10-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-019",
+"title": "Blowout Taper Fade | Barber Breakdown",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=5mfQiFxVOwc",
+"files": "",
+"duration": "10:55",
+"views": 14000,
+"posted": "2025-10-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-020",
+"title": "Brush Back Haircut on Sam Rascals (Easy Tutorial for Barbers)",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=b5w4TY-6WTs",
+"files": "",
+"duration": "10:09",
+"views": 116000,
+"posted": "2025-09-01",
+"star": true,
+"quality": "High",
+"rights": "Guest - collab cleared",
+"usedIn": "",
+"status": "Evergreen pool",
+"notes": "Top performer - collab reach with Sam Rascals audience",
+"added": "2026-07-14"
+},
+{
+"id": "YT-021",
+"title": "From Sleeping on Couches to Building Glorious: The Rise of Jeff Gloria",
+"type": "Video - long-form",
+"category": "Podcast / Interview",
+"pillar": "The Proof",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=Trek7QTv4qg",
+"files": "",
+"duration": "1:16:28",
+"views": 1800,
+"posted": "2025-09-01",
+"star": false,
+"quality": "High",
+"rights": "Guest - collab cleared",
+"usedIn": "",
+"status": "Active",
+"notes": "Quote-card and collab-clip source",
+"added": "2026-07-14"
+},
+{
+"id": "YT-022",
+"title": "Classic Graduation Haircut Tutorial (Step-by-Step Guide)",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=1PLgarDP8NE",
+"files": "",
+"duration": "9:00",
+"views": 4600,
+"posted": "2025-09-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Theory Cut backup source (graduation = elevation)",
+"added": "2026-07-14"
+},
+{
+"id": "YT-023",
+"title": "The Rise of Sam Rascals: From Local Barber to Global Influencer",
+"type": "Video - long-form",
+"category": "Podcast / Interview",
+"pillar": "The Proof",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=qBpaxy46y8c",
+"files": "",
+"duration": "2:00:31",
+"views": 39000,
+"posted": "2025-09-01",
+"star": true,
+"quality": "High",
+"rights": "Guest - collab cleared",
+"usedIn": "",
+"status": "Evergreen pool",
+"notes": "Proven guest demand - collab clip source",
+"added": "2026-07-14"
+},
+{
+"id": "YT-024",
+"title": "A Weekend with Sam Rascals in Toronto",
+"type": "Video - long-form",
+"category": "Podcast / Interview",
+"pillar": "The Proof",
+"funnel": "Position",
+"location": "Toronto",
+"link": "https://www.youtube.com/watch?v=DkKveR_jjT8",
+"files": "",
+"duration": "26:15",
+"views": 16000,
+"posted": "2025-09-01",
+"star": false,
+"quality": "High",
+"rights": "Guest - collab cleared",
+"usedIn": "",
+"status": "Active",
+"notes": "Full-circle beat in World Journey script",
+"added": "2026-07-14"
+},
+{
+"id": "YT-025",
+"title": "The Real Reason Barbers Struggle with Haircuts (and How to Fix It Fast)",
+"type": "Video - long-form",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=AgkBWTSahdE",
+"files": "",
+"duration": "10:17",
+"views": 1600,
+"posted": "2025-09-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-026",
+"title": "Barbers: Stop Announcing Price Increases: Alexi Peter Part 2",
+"type": "Video - long-form",
+"category": "Podcast / Interview",
+"pillar": "The Proof",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=z1tRrDuA_Hs",
+"files": "",
+"duration": "1:14:20",
+"views": 3900,
+"posted": "2025-09-01",
+"star": false,
+"quality": "High",
+"rights": "Guest - collab cleared",
+"usedIn": "",
+"status": "Active",
+"notes": "Contrarian-spike re-cut source",
+"added": "2026-07-14"
+},
+{
+"id": "YT-027",
+"title": "Men's Short Hair Taper with Texture Fringe Inspired by Charles Leclerc",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=MeDVC9b8ViY",
+"files": "",
+"duration": "10:37",
+"views": 9100,
+"posted": "2025-09-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-028",
+"title": "Perfect Brush Back Fade Barber Tutorial",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=v8Q7uZlRErc",
+"files": "",
+"duration": "10:57",
+"views": 7500,
+"posted": "2025-09-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-029",
+"title": "From Dorm Room Haircuts to CEO Barber: The Journey That Changed Everything",
+"type": "Video - long-form",
+"category": "Travel / Founder Vlog",
+"pillar": "The Climb",
+"funnel": "Attract",
+"location": "Toronto",
+"link": "https://www.youtube.com/watch?v=se7955Ma9D0",
+"files": "",
+"duration": "22:20",
+"views": 354,
+"posted": "2025-09-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Origin-story source (AM004 / World Journey)",
+"added": "2026-07-14"
+},
+{
+"id": "YT-030",
+"title": "How I Booked Out My Calendar for $5K/Week as a Barber",
+"type": "Video - long-form",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=TUdNiOJTlc8",
+"files": "",
+"duration": "13:16",
+"views": 978,
+"posted": "2025-08-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Transcript ebook source (The $5K Week)",
+"added": "2026-07-14"
+},
+{
+"id": "YT-031",
+"title": "Burst Fade Haircut with Texture | Easy Step-by-Step",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=i2geF0HQL9M",
+"files": "",
+"duration": "10:04",
+"views": 10000,
+"posted": "2025-08-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-032",
+"title": "How I Went From $20/Cut to $220/Cut Telling Stories",
+"type": "Video - long-form",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=9Zet8dpotpI",
+"files": "",
+"duration": "10:34",
+"views": 941,
+"posted": "2025-08-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Alexi's own receipts - pricing story carousel source",
+"added": "2026-07-14"
+},
+{
+"id": "YT-033",
+"title": "How I Built a $1,213 Customer Lifetime Value as a Barber",
+"type": "Video - long-form",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=07C7dq9nfN8",
+"files": "",
+"duration": "13:04",
+"views": 449,
+"posted": "2025-08-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "CLTV breakdown carousel source",
+"added": "2026-07-14"
+},
+{
+"id": "YT-034",
+"title": "How to Cut a Curly Mod Haircut | Full Barber Tutorial",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=9bUW0ON_KcU",
+"files": "",
+"duration": "9:37",
+"views": 16000,
+"posted": "2025-08-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-035",
+"title": "Asian Mod Haircut Tutorial | Shag Hairstyle for Men",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=5WOUn4hpY48",
+"files": "",
+"duration": "18:22",
+"views": 5500,
+"posted": "2025-08-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-036",
+"title": "How I Used Instagram Engineering to Book Out My Barber Shop in 7 Days",
+"type": "Video - long-form",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=8PBbPNPrDCc",
+"files": "",
+"duration": "12:21",
+"views": 2400,
+"posted": "2025-08-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Transcript ebook source (Instagram Engineering)",
+"added": "2026-07-14"
+},
+{
+"id": "YT-037",
+"title": "Mod Haircut Barber Tutorial (Easy to Cut)",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=ZjfVP4QVPtU",
+"files": "",
+"duration": "18:46",
+"views": 12000,
+"posted": "2025-08-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-038",
+"title": "Textured Drop Fade Brush Back",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=rQ5y29O1rR0",
+"files": "",
+"duration": "10:25",
+"views": 3400,
+"posted": "2025-08-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-039",
+"title": "Converting Instagram Blueprint for Barbers (Growth + Conversions)",
+"type": "Video - long-form",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=b8E15gcb3e4",
+"files": "",
+"duration": "11:57",
+"views": 1100,
+"posted": "2025-08-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Transcript ebook source (Instagram Engineering)",
+"added": "2026-07-14"
+},
+{
+"id": "YT-040",
+"title": "How to Cut Men's Hair with Only a Razor (Insane Tutorial)",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=HSSUJWaIPys",
+"files": "",
+"duration": "11:15",
+"views": 5600,
+"posted": "2025-08-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-041",
+"title": "How I Outsmarted My Subconscious Mind to Get Everything I Wanted",
+"type": "Video - long-form",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=zQLfRz7B-IU",
+"files": "",
+"duration": "6:49",
+"views": 917,
+"posted": "2025-08-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-042",
+"title": "Creative Men's Brush Back Transformation | Advanced Tutorial",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=p-9smqGdT-s",
+"files": "",
+"duration": "16:27",
+"views": 5300,
+"posted": "2025-08-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-043",
+"title": "Haircut Tutorial: Enhancing Texture Without Overcutting",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=1zPeuDzqFl8",
+"files": "",
+"duration": "18:05",
+"views": 8300,
+"posted": "2025-08-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Theory Cut candidate (texture theory)",
+"added": "2026-07-14"
+},
+{
+"id": "YT-044",
+"title": "Barber Moves to Dallas with Nothing... Now Makes $3K/Week in 7 Months",
+"type": "Video - long-form",
+"category": "Student Success Story",
+"pillar": "The Proof",
+"funnel": "Position",
+"location": "Dallas",
+"link": "https://www.youtube.com/watch?v=creTCa7Aeks",
+"files": "",
+"duration": "24:08",
+"views": 313,
+"posted": "2025-08-01",
+"star": false,
+"quality": "Medium",
+"rights": "Student - permission pending",
+"usedIn": "",
+"status": "Active",
+"notes": "Zoom split-screen - stills/audio only for reels",
+"added": "2026-07-14"
+},
+{
+"id": "YT-045",
+"title": "Why Most Barbershops Fail - And How Glassbox Changed the Game",
+"type": "Video - long-form",
+"category": "Podcast / Interview",
+"pillar": "The Proof",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=Vef9VYaoazA",
+"files": "",
+"duration": "46:55",
+"views": 3500,
+"posted": "2025-08-01",
+"star": false,
+"quality": "High",
+"rights": "Guest - collab cleared",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-046",
+"title": "From Sleeping in Barbershops to Global Educator - Andrea Amighetti",
+"type": "Video - long-form",
+"category": "Podcast / Interview",
+"pillar": "The Proof",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=3Z5Xqc8yERE",
+"files": "",
+"duration": "1:01:37",
+"views": 3600,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Guest - collab cleared",
+"usedIn": "",
+"status": "Active",
+"notes": "Quote-card source",
+"added": "2026-07-14"
+},
+{
+"id": "YT-047",
+"title": "Volume Boost Haircut: Subtle Layers, No Length Lost",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=nD2dju4-NV8",
+"files": "",
+"duration": "10:16",
+"views": 3000,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-048",
+"title": "Booked 90 Clients in 14 Days: Veronica's Leap from Employee to Owner",
+"type": "Video - long-form",
+"category": "Student Success Story",
+"pillar": "The Proof",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=BDwPsZh0k9E",
+"files": "",
+"duration": "33:04",
+"views": 391,
+"posted": "2025-07-01",
+"star": false,
+"quality": "Medium",
+"rights": "Student - permission pending",
+"usedIn": "",
+"status": "Active",
+"notes": "Zoom split-screen - stills/audio only for reels",
+"added": "2026-07-14"
+},
+{
+"id": "YT-049",
+"title": "From $45 Cuts to $15K Months: Marcelo's Award Winning Transformation",
+"type": "Video - long-form",
+"category": "Student Success Story",
+"pillar": "The Proof",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=2iIIJBGRT1w",
+"files": "",
+"duration": "20:07",
+"views": 588,
+"posted": "2025-07-01",
+"star": false,
+"quality": "Medium",
+"rights": "Student - permission pending",
+"usedIn": "",
+"status": "Active",
+"notes": "Results Ledger #1 candidate - request work photos",
+"added": "2026-07-14"
+},
+{
+"id": "YT-050",
+"title": "How to Cut & Style the Perfect Textured Middle Part",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=HFkqtU7Rr_M",
+"files": "",
+"duration": "9:48",
+"views": 8200,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-051",
+"title": "The Harsh Truth About Barbering in 2025 (Unfiltered Rant)",
+"type": "Video - long-form",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=Ft6YsO0eicU",
+"files": "",
+"duration": "17:25",
+"views": 1500,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Contrarian-spike re-cut source",
+"added": "2026-07-14"
+},
+{
+"id": "YT-052",
+"title": "Master This Clean Low Taper with Scissors & Clippers",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=FpaMWOzU3WU",
+"files": "",
+"duration": "11:36",
+"views": 10000,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-053",
+"title": "The Most Trendy Haircut for Men in 2025 - How to Do a Wolf Cut",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=IovnLsWpc0A",
+"files": "",
+"duration": "23:55",
+"views": 26000,
+"posted": "2025-07-01",
+"star": true,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Evergreen pool",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-054",
+"title": "Step-by-Step Modern Burst Fade Mullet | Summer 2025",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=q0NlY1BF63s",
+"files": "",
+"duration": "28:48",
+"views": 16000,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-055",
+"title": "Men's Haircut for Curly Hair Step by Step (Scissors Only)",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=evj1WvDJcx4",
+"files": "",
+"duration": "25:09",
+"views": 20000,
+"posted": "2025-07-01",
+"star": true,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Evergreen pool",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-056",
+"title": "POV: You're a 27 Year Old Barber Traveling to Dubai for New Years",
+"type": "Video - long-form",
+"category": "Travel / Founder Vlog",
+"pillar": "The Climb",
+"funnel": "Attract",
+"location": "Dubai",
+"link": "https://www.youtube.com/watch?v=kKaxl0Qx4E0",
+"files": "",
+"duration": "25:28",
+"views": 1100,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "World Journey b-roll",
+"added": "2026-07-14"
+},
+{
+"id": "YT-057",
+"title": "How to Scissor Cut Men's Hair | Easy Tutorial in 20 Min",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=eP9YgZgZukE",
+"files": "",
+"duration": "16:07",
+"views": 12000,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-058",
+"title": "Crop Mid Fade $100 Haircut (Full Length Tutorial)",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=Fdp-jDkWcg0",
+"files": "",
+"duration": "46:19",
+"views": 25000,
+"posted": "2025-07-01",
+"star": true,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Evergreen pool",
+"notes": "Richest detail-shot source for skill-flex reels",
+"added": "2026-07-14"
+},
+{
+"id": "YT-059",
+"title": "What Barber School Never Taught You: The Sales System That Filled My Chair",
+"type": "Video - long-form",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=Qyx2TThXNiY",
+"files": "",
+"duration": "12:03",
+"views": 641,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-060",
+"title": "Can This Haircut Make Thin Hair Look Thicker?",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=gIr34uBgM-o",
+"files": "",
+"duration": "13:34",
+"views": 1600,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-061",
+"title": "Why People Are Winning in This Barber Program?",
+"type": "Video - long-form",
+"category": "Student Success Story",
+"pillar": "The Proof",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=8Jmu-gLpgcA",
+"files": "",
+"duration": "4:58",
+"views": 891,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-062",
+"title": "From a Suicidal to Successful Barber - Justin Bennett",
+"type": "Video - long-form",
+"category": "Podcast / Interview",
+"pillar": "The Proof",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=x8zwdbbB2no",
+"files": "",
+"duration": "1:14:40",
+"views": 957,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Guest - collab cleared",
+"usedIn": "",
+"status": "Active",
+"notes": "Sensitive topic - handle quote cards with care",
+"added": "2026-07-14"
+},
+{
+"id": "YT-063",
+"title": "How to Get 100+ Clients per Month as a Barber Using These Frameworks",
+"type": "Video - long-form",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=OTPo9vmjA-g",
+"files": "",
+"duration": "1:20:43",
+"views": 2400,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-064",
+"title": "Mastering the Curly Top Burst Fade Hairstyle",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=1qXGT4zGW5E",
+"files": "",
+"duration": "16:45",
+"views": 11000,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-065",
+"title": "Watch How This 20 Year Old Makes 20k/m as a Barber",
+"type": "Video - long-form",
+"category": "Student Success Story",
+"pillar": "The Proof",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=jtG9op9RiYc",
+"files": "",
+"duration": "15:02",
+"views": 1200,
+"posted": "2025-07-01",
+"star": false,
+"quality": "Medium",
+"rights": "Student - permission pending",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-066",
+"title": "What Stage of Learning Are You Currently At?",
+"type": "Video - long-form",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=N1Nqtd6gWZM",
+"files": "",
+"duration": "9:53",
+"views": 991,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-067",
+"title": "Mastering the Layered Brush Back (3 Simple Ways)",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=6IKqenkathk",
+"files": "",
+"duration": "30:17",
+"views": 17000,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "Theory Cut #2 (candidate)",
+"status": "Active",
+"notes": "Elevation theory source - 3-ways comparison",
+"added": "2026-07-14"
+},
+{
+"id": "YT-068",
+"title": "Mastering the Art of Middle Part Haircuts with Simple Steps",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=lXPwBUnjg4c",
+"files": "",
+"duration": "12:54",
+"views": 107000,
+"posted": "2025-07-01",
+"star": true,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Evergreen pool",
+"notes": "Top-3 performer",
+"added": "2026-07-14"
+},
+{
+"id": "YT-069",
+"title": "Long Haircut for Men (Done in 20 Min)",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=QAFm4mXoi5Y",
+"files": "",
+"duration": "21:29",
+"views": 34000,
+"posted": "2025-07-01",
+"star": true,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Evergreen pool",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-070",
+"title": "The Haircut Every Man Should Have (The Brush Back)",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=TRuq7-9pTb4",
+"files": "",
+"duration": "18:47",
+"views": 27000,
+"posted": "2025-07-01",
+"star": true,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Evergreen pool",
+"notes": "Proven hook phrasing - reuse in hook bank",
+"added": "2026-07-14"
+},
+{
+"id": "YT-071",
+"title": "After 7 Years of No Growth, This Barber Doubled His Income in 30 Days",
+"type": "Video - long-form",
+"category": "Student Success Story",
+"pillar": "The Proof",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=UHWq92yWIPA",
+"files": "",
+"duration": "17:23",
+"views": 1100,
+"posted": "2025-07-01",
+"star": false,
+"quality": "Medium",
+"rights": "Student - permission pending",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-072",
+"title": "Stop Clients Asking for Changes Mid-Haircut: The 7-Step Consultation System",
+"type": "Video - long-form",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=rkPTFp2dx6g",
+"files": "",
+"duration": "11:32",
+"views": 1500,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Transcript ebook source (Consultation System)",
+"added": "2026-07-14"
+},
+{
+"id": "YT-073",
+"title": "How a Barber Went from $20 to $85 Haircuts in the Same Location",
+"type": "Video - long-form",
+"category": "Student Success Story",
+"pillar": "The Proof",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=hYAk02cRGEQ",
+"files": "",
+"duration": "20:24",
+"views": 1500,
+"posted": "2025-07-01",
+"star": false,
+"quality": "Medium",
+"rights": "Student - permission pending",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-074",
+"title": "Are You Working at the Right or Wrong Barbershop?",
+"type": "Video - long-form",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=weZVrV8NJ7o",
+"files": "",
+"duration": "8:24",
+"views": 879,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-075",
+"title": "Textured Haircut Tutorial in Under 20 Minutes",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=gLP_lCEztnM",
+"files": "",
+"duration": "16:48",
+"views": 8300,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-076",
+"title": "Mid Fade Textured Crop Tutorial Made Easy",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=3np8GFXzv2g",
+"files": "",
+"duration": "17:06",
+"views": 52000,
+"posted": "2025-07-01",
+"star": true,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Evergreen pool",
+"notes": "Top-5 performer",
+"added": "2026-07-14"
+},
+{
+"id": "YT-077",
+"title": "Breaking the Hamster Wheel: How Domenico Got His Passion Back",
+"type": "Video - long-form",
+"category": "Student Success Story",
+"pillar": "The Proof",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=mSjrpNz_Po4",
+"files": "",
+"duration": "20:16",
+"views": 1300,
+"posted": "2025-07-01",
+"star": false,
+"quality": "Medium",
+"rights": "Student - permission pending",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-078",
+"title": "12-Month Blueprint for Opening Your Own Successful Barbershop",
+"type": "Video - long-form",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=JhjMdxiBgq0",
+"files": "",
+"duration": "8:23",
+"views": 14000,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Strong Playbook performer",
+"added": "2026-07-14"
+},
+{
+"id": "YT-079",
+"title": "How I Built a Multi-Million Dollar Barber Education Empire",
+"type": "Video - long-form",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=kzj9YJNlYNg",
+"files": "",
+"duration": "51:58",
+"views": 3300,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-080",
+"title": "The Instagram Mistake Costing You Premium Clients",
+"type": "Video - long-form",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=8HuI6ScvBIs",
+"files": "",
+"duration": "8:34",
+"views": 3100,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-081",
+"title": "Learn To Cut - Textured Graduation Made Easy (Barber Tutorial)",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=GaFysk_FS_k",
+"files": "",
+"duration": "19:56",
+"views": 145000,
+"posted": "2025-07-01",
+"star": true,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "AM006 (reference)",
+"status": "Evergreen pool",
+"notes": "#1 performer - pacing reference for Classroom reels",
+"added": "2026-07-14"
+},
+{
+"id": "YT-082",
+"title": "Barbers Who Educate Will Dominate 2025 (Here's Why)",
+"type": "Video - long-form",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=pELErQUafXM",
+"files": "",
+"duration": "9:17",
+"views": 2300,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-083",
+"title": "Barber Doubles His Income to 73K in Small Town North Carolina with LTC",
+"type": "Video - long-form",
+"category": "Student Success Story",
+"pillar": "The Proof",
+"funnel": "Position",
+"location": "North Carolina",
+"link": "https://www.youtube.com/watch?v=9S17D4ox5fg",
+"files": "",
+"duration": "13:35",
+"views": 464,
+"posted": "2025-07-01",
+"star": false,
+"quality": "Medium",
+"rights": "Student - permission pending",
+"usedIn": "",
+"status": "Active",
+"notes": "Explicit LTC attribution in title",
+"added": "2026-07-14"
+},
+{
+"id": "YT-084",
+"title": "Learn To Cut - Fade Tutorial for Beginners (Full Breakdown)",
+"type": "Video - long-form",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=9Z-rphPZOog",
+"files": "",
+"duration": "17:36",
+"views": 32000,
+"posted": "2025-07-01",
+"star": true,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Evergreen pool",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-085",
+"title": "Mastering Hybrid Skill Sets: The New Barbering Standard in 2025",
+"type": "Video - long-form",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=KPNX-4Bg1_g",
+"files": "",
+"duration": "6:21",
+"views": 973,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-086",
+"title": "This Barber Now Makes $12K/Month After Building His Brand",
+"type": "Video - long-form",
+"category": "Student Success Story",
+"pillar": "The Proof",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=qz_PMBubOP0",
+"files": "",
+"duration": "12:03",
+"views": 662,
+"posted": "2025-07-01",
+"star": false,
+"quality": "Medium",
+"rights": "Student - permission pending",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-087",
+"title": "Why Top-Earning Barbers Are Switching Shops in 2025",
+"type": "Video - long-form",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=56KoQ3FLgwE",
+"files": "",
+"duration": "7:27",
+"views": 1600,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-088",
+"title": "How This Barber Makes $16K/Month Working Less Hours (2 Days Off)",
+"type": "Video - long-form",
+"category": "Student Success Story",
+"pillar": "The Proof",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=wIcc94XIxwI",
+"files": "",
+"duration": "15:34",
+"views": 435,
+"posted": "2025-07-01",
+"star": false,
+"quality": "Medium",
+"rights": "Student - permission pending",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-089",
+"title": "POV: Planning Out 2025 with Your Team in Mexico",
+"type": "Video - long-form",
+"category": "Travel / Founder Vlog",
+"pillar": "The Climb",
+"funnel": "Attract",
+"location": "Mexico",
+"link": "https://www.youtube.com/watch?v=gj_RQPV30Is",
+"files": "",
+"duration": "22:32",
+"views": 567,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "World Journey b-roll",
+"added": "2026-07-14"
+},
+{
+"id": "YT-090",
+"title": "Why the Word Expensive Is Killing Your Success as a Barber",
+"type": "Video - long-form",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=9nn5lgZJeO8",
+"files": "",
+"duration": "6:16",
+"views": 707,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-091",
+"title": "How Payne White Makes $8K-$10K and Works 44 Hours Less",
+"type": "Video - long-form",
+"category": "Student Success Story",
+"pillar": "The Proof",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=TN4mmttmfFg",
+"files": "",
+"duration": "27:26",
+"views": 499,
+"posted": "2025-07-01",
+"star": false,
+"quality": "Medium",
+"rights": "Student - permission pending",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-092",
+"title": "Maximize Your Time and Energy for Your Barbershop Business",
+"type": "Video - long-form",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=zVTB9PT_2P8",
+"files": "",
+"duration": "4:42",
+"views": 440,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-093",
+"title": "How to Deal with Losing Clients as a Barber",
+"type": "Video - long-form",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=SOM4NEiQ7Bo",
+"files": "",
+"duration": "9:38",
+"views": 613,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-094",
+"title": "How Storytelling Can Transform Your Barbering Business",
+"type": "Video - long-form",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=q2X3TaE1XWc",
+"files": "",
+"duration": "6:25",
+"views": 550,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-095",
+"title": "What It's Like to Be a Barber in Dubai. An Honest Conversation with Kochi",
+"type": "Video - long-form",
+"category": "Podcast / Interview",
+"pillar": "The Proof",
+"funnel": "Position",
+"location": "Dubai",
+"link": "https://www.youtube.com/watch?v=NoO80VA5sgw",
+"files": "",
+"duration": "25:08",
+"views": 1200,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Guest - collab cleared",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-096",
+"title": "The Technical Skill That Separates $30 Barbers from $100 Barbers",
+"type": "Video - long-form",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=AefyddIok9Y",
+"files": "",
+"duration": "4:52",
+"views": 2100,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Proven identity hook - reuse phrasing",
+"added": "2026-07-14"
+},
+{
+"id": "YT-097",
+"title": "How Lexi Hartt Made $11K in 15 Days as a Barber in New York",
+"type": "Video - long-form",
+"category": "Student Success Story",
+"pillar": "The Proof",
+"funnel": "Position",
+"location": "New York",
+"link": "https://www.youtube.com/watch?v=xTN1ntZslk0",
+"files": "",
+"duration": "16:13",
+"views": 702,
+"posted": "2025-07-01",
+"star": false,
+"quality": "Medium",
+"rights": "Student - permission pending",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-098",
+"title": "Why Barbering School Is a Waste of Your Money!",
+"type": "Video - long-form",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=wAk0JtFzkY8",
+"files": "",
+"duration": "6:05",
+"views": 855,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Contrarian-spike re-cut source",
+"added": "2026-07-14"
+},
+{
+"id": "YT-099",
+"title": "How Failure in the Barber Industry Made Me a Better Leader",
+"type": "Video - long-form",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=TNqysCFjZok",
+"files": "",
+"duration": "13:31",
+"views": 938,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-100",
+"title": "Is Your Barbering Consultation Costing You? The Framework That Fixed Mine",
+"type": "Video - long-form",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "https://www.youtube.com/watch?v=wy6fBkiKk5A",
+"files": "",
+"duration": "10:12",
+"views": 1200,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Transcript ebook source (Consultation System)",
+"added": "2026-07-14"
+},
+{
+"id": "YT-101",
+"title": "My Journey as a Barber",
+"type": "Video - long-form",
+"category": "Travel / Founder Vlog",
+"pillar": "The Climb",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=zyIzpH2EdWE",
+"files": "",
+"duration": "2:10",
+"views": 1400,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Origin-story b-roll",
+"added": "2026-07-14"
+},
+{
+"id": "YT-102",
+"title": "Week in the Life of a 27 Year Old Barber Made Entrepreneur",
+"type": "Video - long-form",
+"category": "Travel / Founder Vlog",
+"pillar": "The Climb",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=TpFmjnPYFxg",
+"files": "",
+"duration": "15:41",
+"views": 961,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-103",
+"title": "Leading the World's Biggest Online Haircutting Academy as a 27 Year Old",
+"type": "Video - long-form",
+"category": "Travel / Founder Vlog",
+"pillar": "The Climb",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=1B7E8hyGtws",
+"files": "",
+"duration": "15:52",
+"views": 974,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-104",
+"title": "Life as a 27 Y/O Founder Visiting Montreal",
+"type": "Video - long-form",
+"category": "Travel / Founder Vlog",
+"pillar": "The Climb",
+"funnel": "Attract",
+"location": "Montreal",
+"link": "https://www.youtube.com/watch?v=g2RaQxldzH4",
+"files": "",
+"duration": "22:24",
+"views": 1200,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "World Journey b-roll",
+"added": "2026-07-14"
+},
+{
+"id": "YT-105",
+"title": "Leading a Team for the World's Biggest Online Hair Academy at 27",
+"type": "Video - long-form",
+"category": "Travel / Founder Vlog",
+"pillar": "The Climb",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=iOgEJaEFq-Y",
+"files": "",
+"duration": "21:05",
+"views": 1100,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-106",
+"title": "Building the World's Biggest Online Hair Academy as a 27 Year Old",
+"type": "Video - long-form",
+"category": "Travel / Founder Vlog",
+"pillar": "The Climb",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=yhhr-yqLNkk",
+"files": "",
+"duration": "14:40",
+"views": 1700,
+"posted": "2025-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-107",
+"title": "How This Barber Went from $0 to 8K in Just 4 Months After Moving to London",
+"type": "Video - long-form",
+"category": "Student Success Story",
+"pillar": "The Proof",
+"funnel": "Position",
+"location": "London",
+"link": "https://www.youtube.com/watch?v=Wqft3YTE-IE",
+"files": "",
+"duration": "15:24",
+"views": 1600,
+"posted": "2025-07-01",
+"star": false,
+"quality": "Medium",
+"rights": "Student - permission pending",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-108",
+"title": "POV: You're a 27 Year Old Barber Traveling to Malaysia",
+"type": "Video - long-form",
+"category": "Travel / Founder Vlog",
+"pillar": "The Climb",
+"funnel": "Attract",
+"location": "Malaysia",
+"link": "https://www.youtube.com/watch?v=USjgIj06alM",
+"files": "",
+"duration": "21:28",
+"views": 8900,
+"posted": "2024-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "World Journey b-roll - strongest travel performer",
+"added": "2026-07-14"
+},
+{
+"id": "YT-109",
+"title": "POV: You're a 26 Year Old Barber Building Two Businesses in Toronto",
+"type": "Video - long-form",
+"category": "Travel / Founder Vlog",
+"pillar": "The Climb",
+"funnel": "Attract",
+"location": "Toronto",
+"link": "https://www.youtube.com/watch?v=NuOJ8W1fy_E",
+"files": "",
+"duration": "7:26",
+"views": 1500,
+"posted": "2024-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Origin-story b-roll (AM004 / World Journey)",
+"added": "2026-07-14"
+},
+{
+"id": "YT-110",
+"title": "POV: You're a Barber Building a Business Online",
+"type": "Video - long-form",
+"category": "Travel / Founder Vlog",
+"pillar": "The Climb",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=dPdN8roqTEE",
+"files": "",
+"duration": "6:05",
+"views": 1400,
+"posted": "2024-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "",
+"added": "2026-07-14"
+},
+{
+"id": "YT-111",
+"title": "HAIRFEST 2024 Experience - Come See the Journey",
+"type": "Video - long-form",
+"category": "Event / Stage",
+"pillar": "The Climb",
+"funnel": "Attract",
+"location": "",
+"link": "https://www.youtube.com/watch?v=9v-BtIfhObg",
+"files": "",
+"duration": "15:30",
+"views": 1700,
+"posted": "2024-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Stage/event b-roll for Global Educator reel",
+"added": "2026-07-14"
+},
+{
+"id": "YT-112",
+"title": "Day in the Life of a Travelling Barber | Chicago Vlog #1",
+"type": "Video - long-form",
+"category": "Travel / Founder Vlog",
+"pillar": "The Climb",
+"funnel": "Attract",
+"location": "Chicago",
+"link": "https://www.youtube.com/watch?v=wdZ6lAwgsOo",
+"files": "",
+"duration": "12:07",
+"views": 8000,
+"posted": "2023-07-01",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "First travel episode - World Journey b-roll",
+"added": "2026-07-14"
+},
+{
+"id": "BR-001",
+"title": "iPhone B-roll",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/br-001.webp",
+"type": "Video - short/raw",
+"category": "B-roll",
+"pillar": "",
+"funnel": "",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/f3a36551-4efa-46c7-8f23-46392de845d1",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "",
+"rights": "",
+"usedIn": "",
+"status": "Evergreen pool",
+"notes": "Frame.io folder, 228 items. Raw footage pool, not published content. Largest folder in the B-rolls tree. Phone-shot coverage Rights and quality left unset: contents not individually reviewed",
+"added": "2026-08-13"
+},
+{
+"id": "BR-002",
+"title": "BTS John",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/br-002.webp",
+"type": "Video - short/raw",
+"category": "Behind the Scenes",
+"pillar": "",
+"funnel": "",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/393ddcc0-aa60-457e-8047-1a1655bc0fb7",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "",
+"rights": "",
+"usedIn": "",
+"status": "Evergreen pool",
+"notes": "Frame.io folder, 5 items. Raw footage pool, not published content. Rights and quality left unset: contents not individually reviewed",
+"added": "2026-08-13"
+},
+{
+"id": "BR-003",
+"title": "BTS Slam Dunk",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/br-003.webp",
+"type": "Video - short/raw",
+"category": "Behind the Scenes",
+"pillar": "",
+"funnel": "",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/135ab56b-8e99-4fea-8690-cff7269fae4f",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "",
+"rights": "",
+"usedIn": "",
+"status": "Evergreen pool",
+"notes": "Frame.io folder, 8 items. Raw footage pool, not published content. Folder is spelled Zlam dunk in Frame.io Rights and quality left unset: contents not individually reviewed",
+"added": "2026-08-13"
+},
+{
+"id": "BR-004",
+"title": "David Alexander B-roll / BTS",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/br-004.webp",
+"type": "Video - short/raw",
+"category": "Behind the Scenes",
+"pillar": "",
+"funnel": "",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/44c0c83d-8083-4eba-bc90-682ddc190234",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "",
+"rights": "",
+"usedIn": "",
+"status": "Evergreen pool",
+"notes": "Frame.io folder, 2 items. Raw footage pool, not published content. Rights and quality left unset: contents not individually reviewed",
+"added": "2026-08-13"
+},
+{
+"id": "BR-005",
+"title": "End Results",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/br-005.webp",
+"type": "Video - short/raw",
+"category": "Haircut B-roll",
+"pillar": "",
+"funnel": "",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/81b9819f-dfa1-4b8a-935c-86c4ade58f62",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "",
+"rights": "",
+"usedIn": "",
+"status": "Evergreen pool",
+"notes": "Frame.io folder, 3 items. Raw footage pool, not published content. Finished-cut reveals. Folder name has a trailing space in Frame.io Rights and quality left unset: contents not individually reviewed",
+"added": "2026-08-13"
+},
+{
+"id": "BR-006",
+"title": "BTS Cristian, March Week 3",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/br-006.webp",
+"type": "Video - short/raw",
+"category": "Behind the Scenes",
+"pillar": "",
+"funnel": "",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/9208f825-3885-45d0-afce-4e950be3ab73",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "",
+"rights": "",
+"usedIn": "",
+"status": "Evergreen pool",
+"notes": "Frame.io folder, 6 items. Raw footage pool, not published content. Rights and quality left unset: contents not individually reviewed",
+"added": "2026-08-13"
+},
+{
+"id": "BR-007",
+"title": "Upper Buena Vista",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/br-007.webp",
+"type": "Video - short/raw",
+"category": "B-roll",
+"pillar": "",
+"funnel": "",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/7d39dda6-96c1-420c-b5f1-b2caef27ba43",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "",
+"rights": "",
+"usedIn": "",
+"status": "Evergreen pool",
+"notes": "Frame.io folder, 4 items. Raw footage pool, not published content. Miami location shoot Rights and quality left unset: contents not individually reviewed",
+"added": "2026-08-13"
+},
+{
+"id": "BR-008",
+"title": "Studio Videos",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/br-008.webp",
+"type": "Video - short/raw",
+"category": "B-roll",
+"pillar": "",
+"funnel": "",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/2dc5272b-4db4-458b-aef0-6f5ba287fb08",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "",
+"rights": "",
+"usedIn": "",
+"status": "Evergreen pool",
+"notes": "Frame.io folder, 20 items. Raw footage pool, not published content. Rights and quality left unset: contents not individually reviewed",
+"added": "2026-08-13"
+},
+{
+"id": "BR-009",
+"title": "To Add",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/br-009.webp",
+"type": "Video - short/raw",
+"category": "B-roll",
+"pillar": "",
+"funnel": "",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/de3ff0f3-b24a-4bad-9716-63955bf0337f",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "",
+"rights": "",
+"usedIn": "",
+"status": "Evergreen pool",
+"notes": "Frame.io folder, 5 items. Raw footage pool, not published content. HOLDING FOLDER, not a content category. Contents need sorting into a real folder Rights and quality left unset: contents not individually reviewed",
+"added": "2026-08-13"
+},
+{
+"id": "BR-010",
+"title": "Crisp x Alexi",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/br-010.webp",
+"type": "Video - short/raw",
+"category": "B-roll",
+"pillar": "",
+"funnel": "",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/83b62d57-c647-4f8c-8b52-48e8432318a3",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "",
+"rights": "",
+"usedIn": "",
+"status": "Evergreen pool",
+"notes": "Frame.io folder, 12 items. Raw footage pool, not published content. Collaboration footage, so rights may not sit solely with LTC Rights and quality left unset: contents not individually reviewed",
+"added": "2026-08-13"
+},
+{
+"id": "BR-011",
+"title": "BTS Vincent",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/br-011.webp",
+"type": "Video - short/raw",
+"category": "Behind the Scenes",
+"pillar": "",
+"funnel": "",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/9aa24f07-9f39-4f3b-a6e4-5df55941b0e0",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "",
+"rights": "",
+"usedIn": "",
+"status": "Evergreen pool",
+"notes": "Frame.io folder, 134 items. Raw footage pool, not published content. Second largest folder. Pairs with the Vincent model shoot in MS Rights and quality left unset: contents not individually reviewed",
+"added": "2026-08-13"
+},
+{
+"id": "BR-012",
+"title": "Behind the Scenes, March 2025",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/br-012.webp",
+"type": "Video - short/raw",
+"category": "Behind the Scenes",
+"pillar": "",
+"funnel": "",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/7564882f-19bf-41e8-8bc8-889accfdccce",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "",
+"rights": "",
+"usedIn": "",
+"status": "Evergreen pool",
+"notes": "Frame.io folder, 13 items. Raw footage pool, not published content. Frame.io name is Behind the scenes 3-25 Rights and quality left unset: contents not individually reviewed",
+"added": "2026-08-13"
+},
+{
+"id": "BR-013",
+"title": "BTS",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/br-013.webp",
+"type": "Video - short/raw",
+"category": "Behind the Scenes",
+"pillar": "",
+"funnel": "",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/57b49797-d950-42b5-ba3d-60f7a89c87ca",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "",
+"rights": "",
+"usedIn": "",
+"status": "Evergreen pool",
+"notes": "Frame.io folder, 1 items. Raw footage pool, not published content. Single item in a folder named only BTS. Probably belongs inside one of the other BTS folders Rights and quality left unset: contents not individually reviewed",
+"added": "2026-08-13"
+},
+{
+"id": "BR-014",
+"title": "Raws",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/br-014.webp",
+"type": "Video - short/raw",
+"category": "B-roll",
+"pillar": "",
+"funnel": "",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/d567078f-0851-48a1-b27f-5e56f7900521",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "",
+"rights": "",
+"usedIn": "",
+"status": "Evergreen pool",
+"notes": "Frame.io folder, 69 items. Raw footage pool, not published content. Ungraded source material Rights and quality left unset: contents not individually reviewed",
+"added": "2026-08-13"
+},
+{
+"id": "BR-015",
+"title": "Vizcaya",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/br-015.webp",
+"type": "Video - short/raw",
+"category": "B-roll",
+"pillar": "",
+"funnel": "",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/c9326a1a-47b1-4353-b906-ae170700c4ad",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "",
+"rights": "",
+"usedIn": "",
+"status": "Evergreen pool",
+"notes": "Frame.io folder, 162 items. Raw footage pool, not published content. Miami location shoot. SEE BR-016, a near-duplicate folder spelled Vazcaya holding 4 items, worth merging Rights and quality left unset: contents not individually reviewed",
+"added": "2026-08-13"
+},
+{
+"id": "BR-016",
+"title": "Vazcaya",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/br-016.webp",
+"type": "Video - short/raw",
+"category": "B-roll",
+"pillar": "",
+"funnel": "",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/7bb5f163-b2ea-4d35-b256-37b6ddfec31b",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "",
+"rights": "",
+"usedIn": "",
+"status": "Evergreen pool",
+"notes": "Frame.io folder, 4 items. Raw footage pool, not published content. PROBABLE MISSPELLING of Vizcaya, see BR-015 which holds 162 items. Likely the same shoot split in two by a typo, confirm and merge Rights and quality left unset: contents not individually reviewed",
+"added": "2026-08-13"
+},
+{
+"id": "CR-001",
+"title": "He Showed You a Picture of a Man With a Different Haircut",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/cr-001-different-haircut.webp",
+"type": "Carousel",
+"category": "Haircut Tutorial",
+"pillar": "The Classroom",
+"funnel": "Attract",
+"location": "",
+"link": "",
+"files": "https://drive.google.com/drive/folders/13MLKv-l7K-GeQHESvbgaC-wHD57j22Ms",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "11 slides: cover, 9 body, CTA. Talking a client out of a reference photo that will not work on him, in ninety seconds, without sounding like you cannot do it. Drive folder 'Covers with ltc logo'; working files also in Downloads/carousel final",
+"added": "2026-08-12"
+},
+{
+"id": "CR-002",
+"title": "You Already Know How to Cut Hair",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/cr-002-already-know-how-to-cut.webp",
+"type": "Carousel",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "",
+"files": "",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Subline: so why are you still charging what you charged three years ago? Stage shot, @aleximichael handle. Pricing angle",
+"added": "2026-08-12"
+},
+{
+"id": "CR-003",
+"title": "You Can Cut All Seven. Can You Say Who Each One Is For?",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/cr-003-all-seven-who-for.webp",
+"type": "Carousel",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Position",
+"location": "",
+"link": "",
+"files": "",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Subline: that's the difference between a fade technician and a barber. Dark motion-blur cover, LTC logo mark. Consultation and judgement angle rather than technique",
+"added": "2026-08-12"
+},
+{
+"id": "CR-004",
+"title": "4 Jobs. 1 System.",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/cr-004-4-jobs-1-system.webp",
+"type": "Carousel",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "",
+"files": "",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Subline: the exact calendar behind every post. Black and white live-demo crowd shot. Content system angle",
+"added": "2026-08-12"
+},
+{
+"id": "CR-005",
+"title": "7 Lessons I Learned After Cutting Thousands of Clients",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/cr-005-7-lessons.webp",
+"type": "Carousel",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "",
+"files": "",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Seven models in tailoring on a white cyc, editorial lineup cover",
+"added": "2026-08-12"
+},
+{
+"id": "CR-006",
+"title": "Haircuts Every Man Should Try Once",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/cr-006-try-once.webp",
+"type": "Carousel",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "",
+"files": "",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Curly shag close-up with inset before circle, @aleximichael handle",
+"added": "2026-08-12"
+},
+{
+"id": "CR-007",
+"title": "Haircuts That Look Expensive",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/cr-007-look-expensive.webp",
+"type": "Carousel",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "",
+"files": "",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Live floor demo with two inset result circles, @aleximichael handle",
+"added": "2026-08-12"
+},
+{
+"id": "CR-008",
+"title": "The Pricing Mistake That Keeps You at $40 Cuts",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/cr-008-pricing-mistake.webp",
+"type": "Carousel",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "",
+"files": "",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Low-key stage shot, bleached crop model. Pairs with CR-002 on the same pricing theme",
+"added": "2026-08-12"
+},
+{
+"id": "CR-009",
+"title": "Top Haircuts That Are Trending Now in 2026",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/cr-009-trending-2026.webp",
+"type": "Carousel",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "",
+"files": "",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "HairFest Thessaloniki runway shot with two inset circles. Dated to 2026, will need refreshing next year",
+"added": "2026-08-12"
+},
+{
+"id": "CR-010",
+"title": "Haircuts That Attract More Clients",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/cr-010-attract-clients.webp",
+"type": "Carousel",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "",
+"files": "",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Stage demo with two inset result circles. One of the four 'Haircuts ...' series covers",
+"added": "2026-08-12"
+},
+{
+"id": "CR-011",
+"title": "Haircuts Based on Hair Type",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/cr-011-hair-type.webp",
+"type": "Carousel",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "",
+"files": "",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Fresco backdrop, two inset circles. One of the four 'Haircuts ...' series covers",
+"added": "2026-08-12"
+},
+{
+"id": "CR-012",
+"title": "Haircuts Based on Face Shape",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/cr-012-face-shape.webp",
+"type": "Carousel",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "",
+"files": "",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Blonde shag on black, two inset circles. One of the four 'Haircuts ...' series covers",
+"added": "2026-08-12"
+},
+{
+"id": "CR-013",
+"title": "The Haircut That Got 12 Million Views",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/cr-013-12-million-views.webp",
+"type": "Carousel",
+"category": "Haircut Tutorial",
+"pillar": "The Proof",
+"funnel": "Attract",
+"location": "",
+"link": "",
+"files": "",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "The only cover in this batch carrying the @learntocut handle rather than @aleximichael. Reach claim of 12M in the headline, worth confirming before reuse",
+"added": "2026-08-12"
+},
+{
+"id": "CR-014",
+"title": "Five Numbers. They Changed How I Make a Living.",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/cr-014-five-numbers.webp",
+"type": "Carousel",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "",
+"files": "",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Salon floor shot under ring lights, @aleximichael handle. Metrics and money angle",
+"added": "2026-08-12"
+},
+{
+"id": "CR-015",
+"title": "You're Building a Business, Not Just a Schedule",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/cr-015-with-fresha.webp",
+"type": "Carousel",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "",
+"files": "",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "",
+"usedIn": "",
+"status": "Active",
+"notes": "RIGHTS UNSET ON PURPOSE. Cover is badged 'WITH FRESHA' and the copy pitches starting with a professional booking system, so this reads as paid or partner content rather than owned. Confirm the Fresha agreement before reusing it anywhere. Subline: whether you have 1 client or 100, starting with a professional system is the difference between a side hustle and a career",
+"added": "2026-08-12"
+},
+{
+"id": "CR-016",
+"title": "I'm Scared Other Barbers Will Judge My Cuts",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/cr-016-judge-my-cuts.webp",
+"type": "Carousel",
+"category": "Business Talk",
+"pillar": "The Climb",
+"funnel": "Attract",
+"location": "",
+"link": "",
+"files": "",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Two-panel objection and answer format. Top panel is the fear in quotes over a black and white studio shot, bottom is the reply 'barbers who are improving rarely judge' over a HairFest Thessaloniki crowd. Source file is misnamed 'Copy of It's just 30 minutes.png', it is not that carousel",
+"added": "2026-08-12"
+},
+{
+"id": "CR-017",
+"title": "It's Just 30 Minutes",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/cr-017-just-30-minutes.webp",
+"type": "Carousel",
+"category": "Business Talk",
+"pillar": "The Classroom",
+"funnel": "Attract",
+"location": "",
+"link": "",
+"files": "",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Same two-panel format as CR-016. Same half hour spent two ways: 'I don't have time to do anything' against 'I'm going to master this graduation technique'. Practice habits angle",
+"added": "2026-08-12"
+},
+{
+"id": "MS-001",
+"title": "Model shoot: Aditya",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/ms-001.webp",
+"type": "Video - long-form",
+"category": "Model Shoot",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/4a344557-30be-44c6-a116-b59457e69eea",
+"duration": "",
+"views": null,
+"posted": "2026-07-31",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Folder ADITYA- 7/31, 3 items. No finished cut at the top level, so the edit sits in a subfolder. Thumbnail still to be pulled",
+"added": "2026-08-13"
+},
+{
+"id": "MS-002",
+"title": "Model shoot: Anthony Jimeno",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/ms-002.webp",
+"type": "Video - long-form",
+"category": "Model Shoot",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/e52e36a7-e59e-4aa6-b85e-e4e4b9719ee1",
+"duration": "",
+"views": null,
+"posted": "2026-07-31",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Folder ANTHONY JIMENO- 7/31, 2 items. No finished cut at the top level. Thumbnail still to be pulled",
+"added": "2026-08-13"
+},
+{
+"id": "MS-003",
+"title": "Model shoot: Liam",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/ms-003.webp",
+"type": "Video - long-form",
+"category": "Model Shoot",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/e3c4a314-dfd0-4337-bb95-0c780007e569",
+"duration": "",
+"views": null,
+"posted": "2026-07-28",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Folder LIAM-7/28, 5 items. Thumbnail still to be pulled",
+"added": "2026-08-13"
+},
+{
+"id": "MS-004",
+"title": "Model shoot: Kevin",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/ms-004.webp",
+"type": "Video - long-form",
+"category": "Model Shoot",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/66f42a36-b6d5-453a-979d-e22ec2363f5d",
+"duration": "",
+"views": null,
+"posted": "2026-07-28",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Folder KEVIN-7/28, 5 items. Thumbnail still to be pulled",
+"added": "2026-08-13"
+},
+{
+"id": "MS-005",
+"title": "Model shoot: Jose Zuniga",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/ms-005.webp",
+"type": "Video - long-form",
+"category": "Model Shoot",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/b24073a7-c0c4-4b8f-acd2-73dfed6af728",
+"duration": "",
+"views": null,
+"posted": "2026-07-24",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Folder JOSE ZUNIGA-7/24, 5 items. Thumbnail still to be pulled",
+"added": "2026-08-13"
+},
+{
+"id": "MS-006",
+"title": "Model shoot: Facundo",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/ms-006.webp",
+"type": "Video - long-form",
+"category": "Model Shoot",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/5226b943-4595-46da-adf4-78f7ea42c7bc",
+"duration": "",
+"views": null,
+"posted": "2026-07-23",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Folder FACUNDO-7/23, 5 items. Confirmed structure: MAIN 1 item, TOP 1 item, VERT 51 items, plus the finished FACUNDO.mp4 at 01:32 and a Premiere project. Uploaded by Zackary Sayih. Thumbnail still to be pulled",
+"added": "2026-08-13"
+},
+{
+"id": "MS-007",
+"title": "Model shoot: Miguel",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/ms-007.webp",
+"type": "Video - long-form",
+"category": "Model Shoot",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/fabd47b4-5b47-46fb-bdb8-df627b106ce4",
+"duration": "",
+"views": null,
+"posted": "2026-07-21",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Folder MIGUEL-7/21, 5 items. Thumbnail still to be pulled",
+"added": "2026-08-13"
+},
+{
+"id": "MS-008",
+"title": "Model shoot: Tristen",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/ms-008.webp",
+"type": "Video - long-form",
+"category": "Model Shoot",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/e92bc90e-5d6d-4808-84ad-53ee16c89d7f",
+"duration": "",
+"views": null,
+"posted": "2026-07-17",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Folder TRISTEN - 7/17, 4 items. Thumbnail still to be pulled",
+"added": "2026-08-13"
+},
+{
+"id": "MS-009",
+"title": "Model shoot: Brandon",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/ms-009.webp",
+"type": "Video - long-form",
+"category": "Model Shoot",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/1838ebc9-74d6-41ba-8b5b-36975200821b",
+"duration": "",
+"views": null,
+"posted": "2026-07-17",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Folder BRANDON-7/17, 5 items. Finished cut is 30 Brandon.mp4 at 10:29. Thumbnail still to be pulled",
+"added": "2026-08-13"
+},
+{
+"id": "MS-010",
+"title": "Model shoot: Correia",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/ms-010.webp",
+"type": "Video - long-form",
+"category": "Model Shoot",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/f3012610-386d-47b0-b8cc-614e149c3935",
+"duration": "",
+"views": null,
+"posted": "2026-07-15",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Folder Correia- 7/15, 3 items. Finished cut is 31 Correia.mp4 at 01:31. Thumbnail still to be pulled",
+"added": "2026-08-13"
+},
+{
+"id": "MS-011",
+"title": "Model shoot: Milos",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/ms-011.webp",
+"type": "Video - long-form",
+"category": "Model Shoot",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/1943648d-dc03-4f30-a814-3676f4bb3643",
+"duration": "",
+"views": null,
+"posted": "2026-07-15",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Folder MILOS-7/15, 5 items. Thumbnail still to be pulled",
+"added": "2026-08-13"
+},
+{
+"id": "MS-012",
+"title": "Model shoot: Tony",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/ms-012.webp",
+"type": "Video - long-form",
+"category": "Model Shoot",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/c2a528d5-1bf7-43bc-96b8-08b92147dc3c",
+"duration": "",
+"views": null,
+"posted": "2026-06-03",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Folder Tony 6/3, 31 items, much larger than the other shoots. Thumbnail still to be pulled",
+"added": "2026-08-13"
+},
+{
+"id": "MS-013",
+"title": "Model shoot: Anthony",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/ms-013.webp",
+"type": "Video - long-form",
+"category": "Model Shoot",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/4ca159c0-32cc-43f7-9a0b-b9dfac2931dc",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Folder ANTHONY, 2 items, undated. Distinct from MS-002 Anthony Jimeno, worth confirming these are different people. Thumbnail still to be pulled",
+"added": "2026-08-13"
+},
+{
+"id": "MS-014",
+"title": "Model shoot: Jovani",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/ms-014.webp",
+"type": "Video - long-form",
+"category": "Model Shoot",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/591d1010-83ce-48c9-a51c-4348ebd98128",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Folder JOVANI, 4 items, undated. Thumbnail still to be pulled",
+"added": "2026-08-13"
+},
+{
+"id": "MS-015",
+"title": "Model shoot: Killian",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/ms-015.webp",
+"type": "Video - long-form",
+"category": "Model Shoot",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/1902ff82-ec15-4b6c-9f9f-5425083d1bf3",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Folder Killian, 2 items, undated. Thumbnail still to be pulled",
+"added": "2026-08-13"
+},
+{
+"id": "MS-016",
+"title": "Model shoot: Noah",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/ms-016.webp",
+"type": "Video - long-form",
+"category": "Model Shoot",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/e9bcf997-1df4-4b65-b65b-915685b7dcef",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Folder NOAH, 7 items, undated. Thumbnail still to be pulled",
+"added": "2026-08-13"
+},
+{
+"id": "MS-017",
+"title": "Model shoot: Vincent",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/ms-017.webp",
+"type": "Video - long-form",
+"category": "Model Shoot",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/b5b77bd8-c9cc-485b-987e-45610d007479",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Folder Vincent, 3 items, undated. Thumbnail still to be pulled",
+"added": "2026-08-13"
+},
+{
+"id": "MS-018",
+"title": "Model shoot: Waldo",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/ms-018.webp",
+"type": "Video - long-form",
+"category": "Model Shoot",
+"pillar": "The Craft",
+"funnel": "Attract",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/9c396b73-ffdb-425a-8bea-0be59130535b",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Folder WALDO, 1 item, undated. Thumbnail still to be pulled",
+"added": "2026-08-13"
+},
+{
+"id": "TS-001",
+"title": "Wins and Feedback collection",
+"type": "Video - short/raw",
+"category": "Community Win",
+"pillar": "The Proof",
+"funnel": "Position",
+"location": "",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025/2b123804-63fd-419b-9875-919dacb12191",
+"duration": "",
+"views": null,
+"posted": "2026-07-01",
+"star": false,
+"quality": "Raw / Unreviewed",
+"rights": "Student - permission pending",
+"usedIn": "AM009",
+"status": "In edit",
+"notes": "Frame.io folder Wins - Feedback, 24 items. Recorded as one folder rather than 24 separate assets. MERGED 2026-08-13 with the old FR-001 'Student work folder - ~20 finished-cut clips', which pointed at this exact same folder and was a duplicate. Its posted date, usedIn AM009, In edit status and verification note are carried here. RIGHTS PERMISSION PENDING: student wins and feedback need consent before publishing, and each clip must be confirmed as a verified student (John Lloyd) before use",
+"added": "2026-07-14"
+},
+{
+"id": "EB-001",
+"title": "20 Brand Secrets (ebook)",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/eb-001-branding.jpg",
+"type": "Ebook / PDF",
+"category": "Lead Magnet",
+"pillar": "The Classroom",
+"funnel": "Nurture",
+"location": "",
+"link": "",
+"files": "https://drive.google.com/drive/folders/1E17DwbGUQSumCy7MD0dTllMQ2awT9_NS",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Proven performer - drip series source",
+"added": "2026-07-14"
+},
+{
+"id": "EB-002",
+"title": "15 Sectioning Secrets (ebook)",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/eb-002-sectioning.jpg",
+"type": "Ebook / PDF",
+"category": "Lead Magnet",
+"pillar": "The Classroom",
+"funnel": "Nurture",
+"location": "",
+"link": "",
+"files": "https://drive.google.com/drive/folders/1yiY8j_Oec_EUk5qDW268Qa1wQNfu-nHk",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Proven performer - drip series source",
+"added": "2026-07-14"
+},
+{
+"id": "EB-003",
+"title": "The Full Chair System (ebook)",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/eb-003-full-chair.jpg",
+"type": "Ebook / PDF",
+"category": "Lead Magnet",
+"pillar": "The Classroom",
+"funnel": "Nurture",
+"location": "",
+"link": "",
+"files": "https://drive.google.com/drive/folders/1Iczjmh8LFWBSnwy7CnmkLImqXEO9gcmp",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Six-stage path from an empty chair to a fully booked one - Alexi's Toronto story",
+"added": "2026-08-10"
+},
+{
+"id": "EB-004",
+"title": "From Booth Renter to Shop Owner",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/eb-004-booth-renter.webp",
+"type": "Ebook / PDF",
+"category": "Lead Magnet",
+"pillar": "The Classroom",
+"funnel": "Nurture",
+"location": "",
+"link": "",
+"files": "https://drive.google.com/drive/folders/1IOC074rdVGD8QrZZeewC33bvErUhhZbb",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Subtitle: a barber's roadmap in 3 cuts, master the craft, build the name, own the money. MISSING GLYPH ON THE COVER: the header reads 'A LEARNTOCUT GUIDE, THE [box]-CUT ROADMAP' where the numeral 3 has failed to render as a tofu box. Font problem in the artwork, fix before this ships. Tagged Lead Magnet / The Classroom / Nurture to match EB-001 through EB-003, confirm that is right",
+"added": "2026-08-12"
+},
+{
+"id": "PR-001",
+"title": "Barbering in 2025: The New Blueprint For Growth And Success",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/pr-001-barbering-2025.webp",
+"type": "Presentation",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "",
+"files": "https://drive.google.com/drive/folders/16T7U6gaV1z0TymNmz5x3V2FHjGUnKvVT",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "LTC branded title slide, stage photo inset. TYPO ON THE COVER: reads 'BABERING' rather than 'BARBERING'. Fix before this deck is shown or reused. Also dated to 2025",
+"added": "2026-08-12"
+},
+{
+"id": "PR-002",
+"title": "The Booked Client System",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/pr-002-booked-client-system.webp",
+"type": "Presentation",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "",
+"files": "https://drive.google.com/drive/folders/1XisNE6IiogcDdKopVlsk63sOWzgeFGRm",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Subtitle: how to 3X your bookings using targeted ads plus automate trust through content. Fresco backdrop, no LTC mark on the cover unlike PR-001 and PR-003",
+"added": "2026-08-12"
+},
+{
+"id": "PR-003",
+"title": "Identity & Brand For Barbers",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/pr-003-identity-and-brand.webp",
+"type": "Presentation",
+"category": "Business Talk",
+"pillar": "The Playbook",
+"funnel": "Position",
+"location": "",
+"link": "",
+"files": "https://drive.google.com/drive/folders/1JZVAg9BmH5iVaDc6kvY63OGLWsRw4gMf",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Subtitle: from who you are to how the world experiences you. LTC logo and wordmark, same stage photo inset as PR-001",
+"added": "2026-08-12"
+},
+{
+"id": "PR-004",
+"title": "Choosing Your Path: The Reality of What Comes Next",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/pr-004-choosing-your-path.webp",
+"type": "Presentation",
+"category": "Business Talk",
+"pillar": "The Climb",
+"funnel": "Position",
+"location": "",
+"link": "",
+"files": "https://drive.google.com/drive/folders/1Pau_tWsnqSIw7yyhkioV_FGeLlPTCuyJ",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Subtitle: a roadmap to clarity, growth, and direction in your career. Three-arrow diagram, clarity / growth / direction. Career path angle rather than shop mechanics, hence The Climb",
+"added": "2026-08-12"
+},
+{
+"id": "PR-005",
+"title": "Trench Coat Mafia",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/pr-005-trench-coat-mafia.webp",
+"type": "Presentation",
+"category": "Event / Stage",
+"pillar": "",
+"funnel": "",
+"location": "",
+"link": "",
+"files": "https://drive.google.com/drive/folders/12iqWGJGgedUkNentQKNlnfTBxVlqiQfm",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "PILLAR AND FUNNEL LEFT BLANK. The title slide is the name alone with no subtitle, so there is nothing on it to tag from. Set them once the deck contents are known. Footer reads 'LEARN TO CUT  GRADIENT', so Gradient looks like the template name. Believed to be a HairFest keynote, worth confirming",
+"added": "2026-08-12"
+},
+{
+"id": "PR-006",
+"title": "Symmetry",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/pr-006-symmetry.webp",
+"type": "Presentation",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Nurture",
+"location": "",
+"link": "",
+"files": "",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "17 slides, footer counter reads 01 / 17. Part of the Learn To Cut Academy deck series, distinct from PR-001 to PR-005: serif display title, LTC monogram centred, rose accent, slide counter. No subtitle on the cover so the exact scope is unconfirmed. Source file was named just '1.png'",
+"added": "2026-08-12"
+},
+{
+"id": "PR-007",
+"title": "Face Shapes",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/pr-007-face-shapes.webp",
+"type": "Presentation",
+"category": "Haircut Tutorial",
+"pillar": "The Craft",
+"funnel": "Nurture",
+"location": "",
+"link": "",
+"files": "",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "20 slides, footer counter reads 01 / 20. Eyebrow: Facial Balance Framework. Subtitle: a simple system for analyzing faces and designing better haircuts. Learn To Cut Academy series. Covers the same ground as the carousel CR-012 Haircuts Based on Face Shape, so the two can feed each other",
+"added": "2026-08-12"
+},
+{
+"id": "PR-008",
+"title": "Scarcity vs Abundance",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/pr-008-scarcity-vs-abundance.webp",
+"type": "Presentation",
+"category": "Business Talk",
+"pillar": "The Climb",
+"funnel": "Nurture",
+"location": "Miami",
+"link": "",
+"files": "",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "23 slides, footer counter reads 01 / 23. Eyebrow: MIAMI INTENSIVE, so this belongs to the Miami event rather than being evergreen academy material. Subtitle: the state you cut from. Mindset topic, hence The Climb. Source file was named 'Slide 41.png' which is misleading, it is the cover",
+"added": "2026-08-12"
+},
+{
+"id": "PD-001",
+"title": "Learn to Cut x Ukraine",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/pd-001-ltc-x-ukraine.webp",
+"type": "Pitch deck",
+"category": "Proposal",
+"pillar": "",
+"funnel": "",
+"location": "Ukraine",
+"link": "",
+"files": "https://drive.google.com/drive/folders/1qKQFMEgCS_RN03J_SF4BFBH5jpOq1g2O",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "",
+"usedIn": "",
+"status": "Active",
+"notes": "NOT FOR REUSE. Eyebrow reads EDUCATIONAL EVENT PROPOSAL and the cover is addressed 'Prepared for Arthur', so this is a live outbound document written for one named recipient, not a reusable asset. Rights left unset on purpose. Split cover, copy left and a stage photo right, learntocut.com in the footer. Pillar and funnel are blank because this is not audience-facing content",
+"added": "2026-08-12"
+},
+{
+"id": "PD-002",
+"title": "Fresha x Alexi Partnership Proposal",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/pd-002-fresha-x-alexi.webp",
+"type": "Pitch deck",
+"category": "Proposal",
+"pillar": "",
+"funnel": "",
+"location": "",
+"link": "",
+"files": "https://drive.google.com/drive/folders/1oJxZIBTZgHh1x40mOeRQc45G_QpjhmHB",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "",
+"usedIn": "",
+"status": "Active",
+"notes": "NOT FOR REUSE. Outbound partnership pitch to Fresha, co-branded LTC and Fresha lockup, dated 2025 on the cover so it may already be superseded. Subtitle: redefining how barbers grow with Fresha. Rights left unset on purpose. TIES TO CR-015, the carousel badged 'WITH FRESHA' whose rights are also unset. This deck is evidence the partnership is real, so whatever was agreed here governs what CR-015 may be used for",
+"added": "2026-08-12"
+},
+{
+"id": "LG-001",
+"title": "Monogram & Wordmark, Black",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/lg-001-lockup-black.webp",
+"type": "Logo",
+"category": "Brand Asset",
+"pillar": "",
+"funnel": "",
+"location": "",
+"link": "",
+"files": "https://drive.google.com/drive/folders/1zWEr5MDdxmUX-aMrBNA4-iW2A35quJr8",
+"duration": "",
+"views": null,
+"posted": "",
+"star": true,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "The primary lockup. Monogram above the LEARN TO CUT wordmark, black artwork, transparent background, 1666x1475. Use this one by default on light backgrounds",
+"added": "2026-08-12"
+},
+{
+"id": "LG-002",
+"title": "Monogram & Wordmark, White",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/lg-002-lockup-white.webp",
+"type": "Logo",
+"category": "Brand Asset",
+"pillar": "",
+"funnel": "",
+"location": "",
+"link": "",
+"files": "https://drive.google.com/drive/folders/1zWEr5MDdxmUX-aMrBNA4-iW2A35quJr8",
+"duration": "",
+"views": null,
+"posted": "",
+"star": true,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Primary lockup in white, transparent background, 1666x1475. The dark-background counterpart to LG-001",
+"added": "2026-08-12"
+},
+{
+"id": "LG-003",
+"title": "Monogram, Black",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/lg-003-monogram-black.webp",
+"type": "Logo",
+"category": "Brand Asset",
+"pillar": "",
+"funnel": "",
+"location": "",
+"link": "",
+"files": "https://drive.google.com/drive/folders/1zWEr5MDdxmUX-aMrBNA4-iW2A35quJr8",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Monogram alone, no wordmark. Black artwork, transparent background, 947x1174. For small sizes and avatars where the wordmark would be unreadable",
+"added": "2026-08-12"
+},
+{
+"id": "LG-004",
+"title": "Monogram, White",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/lg-004-monogram-white.webp",
+"type": "Logo",
+"category": "Brand Asset",
+"pillar": "",
+"funnel": "",
+"location": "",
+"link": "",
+"files": "https://drive.google.com/drive/folders/1zWEr5MDdxmUX-aMrBNA4-iW2A35quJr8",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Monogram alone in white, transparent background, 947x1174. This is the mark that appears on the carousel and presentation covers",
+"added": "2026-08-12"
+},
+{
+"id": "LG-005",
+"title": "Wordmark, Black",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/lg-005-wordmark-black.webp",
+"type": "Logo",
+"category": "Brand Asset",
+"pillar": "",
+"funnel": "",
+"location": "",
+"link": "",
+"files": "https://drive.google.com/drive/folders/1zWEr5MDdxmUX-aMrBNA4-iW2A35quJr8",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "LEARN TO CUT wordmark alone, letterspaced, black, transparent background. Very wide at 3313x251, roughly 13 to 1, so it suits headers and footers rather than square placements",
+"added": "2026-08-12"
+},
+{
+"id": "LG-006",
+"title": "Wordmark, White",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/lg-006-wordmark-white.webp",
+"type": "Logo",
+"category": "Brand Asset",
+"pillar": "",
+"funnel": "",
+"location": "",
+"link": "",
+"files": "https://drive.google.com/drive/folders/1zWEr5MDdxmUX-aMrBNA4-iW2A35quJr8",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Wordmark alone in white, transparent background, 3313x251",
+"added": "2026-08-12"
+},
+{
+"id": "LG-007",
+"title": "Monogram on White Square",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/lg-007-monogram-on-white.webp",
+"type": "Logo",
+"category": "Brand Asset",
+"pillar": "",
+"funnel": "",
+"location": "",
+"link": "",
+"files": "https://drive.google.com/drive/folders/1zWEr5MDdxmUX-aMrBNA4-iW2A35quJr8",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Flattened badge, black monogram on a solid white square, 1178x1178. No transparency, so it carries its own background. Use where a profile picture or a hard-edged tile is required",
+"added": "2026-08-12"
+},
+{
+"id": "LG-008",
+"title": "Monogram on Black Square",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/lg-008-monogram-on-black.webp",
+"type": "Logo",
+"category": "Brand Asset",
+"pillar": "",
+"funnel": "",
+"location": "",
+"link": "",
+"files": "https://drive.google.com/drive/folders/1zWEr5MDdxmUX-aMrBNA4-iW2A35quJr8",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Flattened badge, white monogram on a solid black square, 1178x1178. The inverse of LG-007",
+"added": "2026-08-12"
+},
+{
+"id": "LG-009",
+"title": "Monogram & Wordmark on Black Square",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/lg-009-lockup-on-black.webp",
+"type": "Logo",
+"category": "Brand Asset",
+"pillar": "",
+"funnel": "",
+"location": "",
+"link": "",
+"files": "https://drive.google.com/drive/folders/1zWEr5MDdxmUX-aMrBNA4-iW2A35quJr8",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Flattened badge, full lockup in white on a solid black square, 1177x1177",
+"added": "2026-08-12"
+},
+{
+"id": "LG-010",
+"title": "Monogram & Wordmark, Black (low resolution)",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/lg-010-lockup-black-lowres.webp",
+"type": "Logo",
+"category": "Brand Asset",
+"pillar": "",
+"funnel": "",
+"location": "",
+"link": "",
+"files": "https://drive.google.com/drive/folders/1zWEr5MDdxmUX-aMrBNA4-iW2A35quJr8",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "Low",
+"rights": "Owned",
+"usedIn": "",
+"status": "Archived",
+"notes": "DUPLICATE, CANDIDATE FOR DELETION. Same artwork as LG-001 but only 765x679 against 1666x1475, so under half the resolution. Its source file is also misnamed 'Black on white background.png' when the background is in fact transparent. Recorded so the duplicate is visible rather than lurking in the folder. Use LG-001 instead",
+"added": "2026-08-12"
+},
+{
+"id": "DS-001",
+"title": "Brand Guidelines",
+"thumb": "",
+"type": "Design asset",
+"category": "Brand Guidelines",
+"pillar": "",
+"funnel": "",
+"location": "",
+"link": "",
+"files": "",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "STUB, needs a cover image and a folder link. Holds the brand rules that sit around the logo pack in LG-001 to LG-010: typefaces, colour values, spacing and usage. Pillar and funnel deliberately blank, this is a brand asset rather than audience-facing content, same as the logos",
+"added": "2026-08-13"
+},
+{
+"id": "DS-002",
+"title": "YouTube Banners",
+"thumb": "",
+"type": "Design asset",
+"category": "YouTube Banners",
+"pillar": "",
+"funnel": "",
+"location": "",
+"link": "",
+"files": "",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "STUB, needs a cover image and a folder link. Channel art for the YouTube channel behind the 112 YT records. Kept as its own category under Design so banners stay separable from the brand guidelines",
+"added": "2026-08-13"
+},
+{
+"id": "DS-003",
+"title": "Templates",
+"thumb": "",
+"type": "Design asset",
+"category": "Templates",
+"pillar": "",
+"funnel": "",
+"location": "",
+"link": "",
+"files": "",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "STUB, needs a cover image and a folder link. Reusable layouts the team builds from. Broad by design for now: if it ends up holding several distinct kinds, carousel templates against thumbnail templates against deck templates, split it into a category each rather than letting one record stand for all of them",
+"added": "2026-08-13"
+},
+{
+"id": "PH-001",
+"title": "Gym / studio / travel photo archive",
+"type": "Photo",
+"category": "Lifestyle / Gym",
+"pillar": "The Climb",
+"funnel": "Attract",
+"location": "Other",
+"link": "",
+"files": "",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "Medium",
+"rights": "Owned",
+"usedIn": "",
+"status": "Active",
+"notes": "Catch-all for gym, studio and travel stills. Event photography now lives in its own per-event records (PH-002 onward), so this should only hold non-event material. No folder linked yet",
+"added": "2026-07-14"
+},
+{
+"id": "PH-002",
+"title": "HairFest Greece 2024",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/ph-002-hairfest-greece-2024.webp",
+"type": "Photo",
+"category": "Event / Stage",
+"pillar": "The Climb",
+"funnel": "Position",
+"location": "Greece",
+"link": "",
+"files": "",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "",
+"usedIn": "",
+"status": "Active",
+"notes": "Cutting on stage to a live audience, broadcast crew in frame badged 'medio multimedia', so the event ran its own media team. RIGHTS UNSET ON PURPOSE: event photography is often shot by the organiser rather than owned by the speaker, confirm who holds these before publishing. Year is from the filename, exact date unknown",
+"added": "2026-08-13"
+},
+{
+"id": "PH-003",
+"title": "HairFest Greece 2025",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/ph-003-hairfest-greece-2025.webp",
+"type": "Photo",
+"category": "Event / Stage",
+"pillar": "The Climb",
+"funnel": "Position",
+"location": "Greece",
+"link": "",
+"files": "",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "",
+"usedIn": "",
+"status": "Active",
+"notes": "Main stage, full LED fire backdrop, two models caped in HAIRFEST branding plus a line of suited models and a camera crew. The largest production of the four events. TIES TO PR-005 Trench Coat Mafia, the HairFest keynote deck. RIGHTS UNSET ON PURPOSE, see PH-002. Year from filename, exact date unknown",
+"added": "2026-08-13"
+},
+{
+"id": "PH-004",
+"title": "Poland 2026",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/ph-004-poland-2026.webp",
+"type": "Photo",
+"category": "Event / Stage",
+"pillar": "The Classroom",
+"funnel": "Position",
+"location": "Poland",
+"link": "",
+"files": "",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "",
+"usedIn": "",
+"status": "Active",
+"notes": "Group photo of roughly 40 attendees in a brick-walled venue, lanyards and seating, so a workshop or masterclass rather than a stage show. Pillared as The Classroom on that basis, change to The Climb if it was a keynote. RIGHTS UNSET ON PURPOSE: around 40 identifiable attendees, consent matters before this is published. Exact date unknown",
+"added": "2026-08-13"
+},
+{
+"id": "PH-005",
+"title": "Gloria Brazil 2026",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/ph-005-brazil-2026.webp",
+"type": "Photo",
+"category": "Event / Stage",
+"pillar": "The Climb",
+"funnel": "Position",
+"location": "Brazil",
+"link": "",
+"files": "https://drive.google.com/drive/folders/1hm8D72qblx82mst9DrenBzMFW1ybFrvq",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "High",
+"rights": "",
+"usedIn": "",
+"status": "Active",
+"notes": "Gloria, Brazil. Large arena stage, blue wash lighting, three on stage together and white-clad models behind. The partial word on the screen behind them is the Gloria name. Most recent of the four events. RIGHTS UNSET ON PURPOSE, see PH-002. Described as this month, so August 2026, but the exact date is unconfirmed",
+"added": "2026-08-13"
+},
+{
+"id": "BR-017",
+"title": "Shanghai Trip B-roll",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/fi-011.webp",
+"type": "Video - short/raw",
+"category": "Travel / Founder Vlog",
+"pillar": "The Climb",
+"funnel": "Attract",
+"location": "Shanghai",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "Medium",
+"rights": "Owned",
+"usedIn": "",
+"status": "Evergreen pool",
+"notes": "Asia trip POV b-roll, 36 clips, shot handheld on a DJI Osmo Pocket. COLLAPSED 2026-08-13 from 36 individual clip records into this one. Every clip's own f.io share link, thumbnail and quality rating is preserved in fi-clips-manifest.json next to this file, so the split can be restored. 3 clips are rated Low, dark, blurred or obstructed. Includes barbershop interiors that feed the Shanghai YouTube video. Rights Owned, contents not individually cleared for publication",
+"added": "2026-08-13"
+},
+{
+"id": "BR-018",
+"title": "Japan Trip B-roll",
+"thumb": "https://vmqggyulrngmjtgqvlrm.supabase.co/storage/v1/object/public/assets/fi-043.webp",
+"type": "Video - short/raw",
+"category": "Travel / Founder Vlog",
+"pillar": "The Climb",
+"funnel": "Attract",
+"location": "Japan",
+"link": "",
+"files": "https://next.frame.io/project/39dcb0a0-457d-4492-8d33-9902a9670025",
+"duration": "",
+"views": null,
+"posted": "",
+"star": false,
+"quality": "Medium",
+"rights": "Owned",
+"usedIn": "",
+"status": "Evergreen pool",
+"notes": "Asia trip POV b-roll, 46 clips, shot handheld on a DJI Osmo Pocket. COLLAPSED 2026-08-13 from 45 individual clip records into this one. Every clip's own f.io share link, thumbnail and quality rating is preserved in fi-clips-manifest.json next to this file, so the split can be restored. 5 clips are rated Low, dark, blurred or obstructed. One clip was a Frame.io placeholder graphic rather than footage, and one could not be resolved at all. Rights Owned, contents not individually cleared for publication",
+"added": "2026-08-13"
+}
+];
+
+/* ── storage ────────────────────────────────────────────────
+   Supabase, spoken to over plain fetch against PostgREST rather than the JS SDK,
+   so this stays a single file with no library to load.
+
+   SEED above is still the offline fallback. If the network is down or the key is
+   wrong, rebuild() falls back to it and the catalogue opens read-only instead of
+   empty. storageOnline records which of those two happened.
+
+   The anon key is public by design: it ships inside this file. Row level security
+   grants read, insert and update but not delete, so a leaked key cannot empty the
+   table. Keep this file private anyway.                                          */
+const SUPABASE_URL      = 'https://vmqggyulrngmjtgqvlrm.supabase.co';   // https://xxxxxxxx.supabase.co
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZtcWdneXVscm5nbWp0Z3F2bHJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA0NzQyMjQsImV4cCI6MjA5NjA1MDIyNH0.D7-EtwbZ2UpqkOPEn7plAZABfnW5IBPbtjm9T7UOMNI';      // eyJhbGciOi...
+
+const SB = () => `${SUPABASE_URL}/rest/v1/assets`;
+const sbHeaders = () => ({
+  apikey: SUPABASE_ANON_KEY,
+  Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+  'Content-Type': 'application/json',
+});
+const sbConfigured = () => !SUPABASE_URL.startsWith('PASTE_');
+let storageOnline = false;
+
+async function loadOverlay(){
+  if(!sbConfigured()){
+    console.warn('Supabase not configured yet - showing the built-in seed only.');
+    return {};
+  }
+  // A refused connection rejects fast, but a black-holed one (offline captive portal,
+  // DNS timeout) can hang forever. Without this, boot would wait on it indefinitely
+  // and the catalogue would never render.
+  const ctrl = new AbortController();
+  const bail = setTimeout(() => ctrl.abort(), 8000);
+  try{
+    const r = await fetch(`${SB()}?select=*`, {headers: sbHeaders(), signal: ctrl.signal});
+    if(!r.ok) throw new Error(`${r.status} ${await r.text()}`);
+    const rows = await r.json();
+    storageOnline = true;
+    return Object.fromEntries(rows.map(row => [row.id, row]));
+  }catch(e){
+    storageOnline = false;
+    console.warn('Supabase unavailable, falling back to the built-in seed:', e.message);
+    return {};
+  }finally{
+    clearTimeout(bail);
+  }
+}
+
+/* One row per asset, so saving an asset touches only that asset. Two people editing
+   different records at the same time no longer overwrite each other, which a
+   whole-blob write could not avoid. */
+async function saveAsset(rec){
+  if(!sbConfigured()) return false;
+  try{
+    // the form leaves views as '' on non-video assets; the column is bigint
+    const body = {...rec, views: (rec.views === '' || rec.views == null) ? null : Number(rec.views)};
+    const r = await fetch(`${SB()}?on_conflict=id`, {
+      method: 'POST',
+      headers: {...sbHeaders(), Prefer: 'resolution=merge-duplicates,return=minimal'},
+      body: JSON.stringify(body),
+    });
+    if(!r.ok) throw new Error(`${r.status} ${await r.text()}`);
+    storageOnline = true;
+    return true;
+  }catch(e){
+    console.error('Supabase save failed:', e.message);
+    return false;
+  }
+}
+
+let overlay = {};
+let assets = [];
+function rebuild(){
+  const byId = new Map(SEED.map(a => [a.id, a]));
+  for(const [id, rec] of Object.entries(overlay)) byId.set(id, {...(byId.get(id)||{}), ...rec});
+  assets = [...byId.values()];
+}
+
+/* ── state ─────────────────────────────────── */
+const PILLARS = ['The Craft','The Climb','The Proof','The Playbook','The Classroom','Inside LTC'];
+const FIELDS = {funnel:'f-funnel', rights:'f-rights', status:'f-status', type:'f-type',
+                category:'f-category', location:'f-location'};
+
+/* Source is derived from the ID prefix, not stored on the record —
+   the prefix already encodes where the asset lives. Order here is
+   the order shown in the rail. */
+const SOURCES = [
+  ['YT','YouTube'], ['MS','Model shoot'], ['TS','Testimonials'], ['BR','B-roll'], ['CR','Carousel'],
+  ['EB','Ebook'], ['PR','Presentation'], ['PD','Pitch deck'],
+  ['PH','Photo'], ['LG','Logo'], ['DS','Design'],
+];
+const SRC_NAME = Object.fromEntries(SOURCES);
+const srcOf = a => String(a.id||'').split('-')[0] || '';
+
+const state = {q:'', sort:'id', view:'list', source:new Set(), pillar:new Set(), funnel:new Set(),
+               rights:new Set(), status:new Set(), type:new Set(), category:new Set(),
+               location:new Set(), flags:new Set()};
+const FLAGS = {
+  star:   {label:'Best performer', test:a=>a.star},
+  hold:   {label:'Permission pending', test:a=>a.rights==='Student - permission pending'},
+  // neither link, not just no published one — raw footage was never posted anywhere,
+  // so testing `link` alone would flag all 83 source-only records as broken
+  nolink: {label:'Missing link', test:a=>!a.link && !a.files},
+  untag:  {label:'Untagged', test:a=>!a.pillar},
+};
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s??'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmtViews = v => v==null ? '' : v>=1000 ? (v/1000).toFixed(v>=10000?0:1).replace(/\.0$/,'')+'k' : String(v);
+
+function matches(a){
+  if(state.source.size && !state.source.has(srcOf(a))) return false;
+  // __untagged is a pseudo-pillar for "no pillar set", so the tab strip can offer it
+  if(state.pillar.size){
+    const p = (a.pillar || '').trim();
+    const want = state.pillar.has('__untagged') ? !p : state.pillar.has(p);
+    if(!want) return false;
+  }
+  for(const f of Object.keys(FIELDS)) if(state[f].size && !state[f].has(a[f])) return false;
+  for(const f of state.flags) if(!FLAGS[f].test(a)) return false;
+  if(state.q){
+    const hay = [a.id,a.title,a.notes,a.category,a.location,a.usedIn,a.pillar,a.type,a.quality,
+                 SRC_NAME[srcOf(a)]]
+      .join(' ').toLowerCase();
+    if(!state.q.toLowerCase().split(/\s+/).every(t => hay.includes(t))) return false;
+  }
+  return true;
+}
+function sortFn(a,b){
+  switch(state.sort){
+    case 'views':  return (b.views??-1)-(a.views??-1);
+    case 'posted': return (b.posted||'').localeCompare(a.posted||'');
+    case 'title':  return a.title.localeCompare(b.title);
+    default:       return a.id.localeCompare(b.id);
+  }
+}
+
+/* ── render: rail ───────────────────────────── */
+/* ── collapsible groups ─────────────────────────
+   Open/closed is remembered per group, so someone who
+   works mostly in Source and Pillar keeps the rest shut. */
+const GRP_KEY = 'ltc-rail-groups';
+function loadGroups(){
+  try{ return JSON.parse(localStorage.getItem(GRP_KEY)) || {}; }catch(e){ return {}; }
+}
+/* Source is the primary navigation, so on desktop it is pinned open: there is room
+   for it and collapsing it hides the main way around the library. The drawer on a
+   phone is tight, so it stays collapsible there. Enforced in JS because `open` is an
+   attribute and CSS cannot force a <details> open. */
+const SOURCE_PINNED = () => innerWidth > 880;
+function pinSourceGroup(){
+  const d = document.querySelector('.grp[data-grp="source"]');
+  if(!d) return;
+  const pinned = SOURCE_PINNED();
+  d.classList.toggle('pinned', pinned);
+  if(pinned && !d.open) d.open = true;
+}
+
+function initGroups(){
+  const saved = loadGroups();
+  document.querySelectorAll('.grp').forEach(d => {
+    if(d.dataset.grp in saved) d.open = !!saved[d.dataset.grp];
+    d.addEventListener('toggle', () => {
+      // a pinned group that somehow closes springs straight back
+      if(d.dataset.grp === 'source' && SOURCE_PINNED() && !d.open){ d.open = true; return; }
+      const s = loadGroups();
+      s[d.dataset.grp] = d.open;
+      try{ localStorage.setItem(GRP_KEY, JSON.stringify(s)); }catch(e){}
+    });
+  });
+  pinSourceGroup();
+}
+function renderBadges(){
+  document.querySelectorAll('.grp').forEach(d => {
+    const n = state[d.dataset.grp] ? state[d.dataset.grp].size : 0;
+    const b = d.querySelector('.badge');
+    // The badge exists so a COLLAPSED group can still say it is filtering something.
+    // A pinned group is always open and its selection is highlighted right below the
+    // heading, so the count only repeats what is already on screen, and a lone digit
+    // beside a heading reads as an unread notification rather than a filter count.
+    const pinned = d.classList.contains('pinned');
+    b.textContent = n && !pinned ? n : '';
+    b.classList.toggle('on', n > 0 && !pinned);
+  });
+}
+
+/* Source rows in the rail. One at a time, with an All row on top: an asset lives in
+   exactly one place, so combining sources was never meaningful. */
+function renderSources(){
+  const counts = {};
+  for(const a of assets){ const s = srcOf(a); if(s) counts[s] = (counts[s]||0)+1; }
+  const known = SOURCES.map(([c])=>c);
+  // Every declared source is listed, empty or not, so the rail stays the
+  // catalogue's full vocabulary: you can see a slot exists before anything fills it.
+  const codes = [
+    ...known,
+    ...Object.keys(counts).filter(c => !known.includes(c)).sort(),
+  ];
+  const row = (code, label, n, on, dead) => `
+    <button class="src-row${dead ? ' unused' : ''}" data-src="${esc(code)}"
+            aria-pressed="${on}"${dead ? ' disabled' : ''}>
+      <span class="code">${esc(code || '·')}</span>
+      <span class="nm">${esc(label)}</span>
+      <span class="ct">${n}</span>
+    </button>`;
+
+  $('#sources').innerHTML =
+    row('', 'All sources', assets.length, state.source.size === 0, false) +
+    codes.map(c => row(c, SRC_NAME[c] || c, counts[c] || 0, state.source.has(c), !counts[c])).join('');
+}
+
+/* Pillar tabs above the grid. Same one-at-a-time rule as source: an asset has a
+   single pillar, so combining them was never meaningful. */
+function renderPillarTabs(){
+  /* Counts are scoped to the selected source, not the whole library. Otherwise a tab
+     advertises 48 while the source you are in holds none of them, and clicking it
+     lands on "Nothing matches that". Scoped counts make an impossible combination
+     visibly unavailable instead of a dead end you discover by falling into it. */
+  const inScope = state.source.size
+    ? assets.filter(a => state.source.has(srcOf(a)))
+    : assets;
+  const counts = {};
+  for(const a of inScope){ const p = (a.pillar || '').trim(); if(p) counts[p] = (counts[p]||0)+1; }
+  const names = [
+    ...PILLARS,
+    ...Object.keys(counts).filter(p => !PILLARS.includes(p)).sort(),
+  ];
+  const tab = (name, label, n, on) => `
+    <button class="src-tab${n === 0 ? ' unused' : ''}" role="tab" data-pillar="${esc(name)}"
+            aria-selected="${on}"${n === 0 ? ' disabled' : ''}>
+      <span class="nm">${esc(label)}</span><span class="ct">${n}</span>
+    </button>`;
+
+  const untagged = inScope.filter(a => !(a.pillar || '').trim()).length;
+  // No All tab here: "All sources" in the rail already covers the reset, and
+  // clicking the selected pillar again clears it.
+  $('#pilltabs').innerHTML =
+    names.map(p => tab(p, p, counts[p] || 0, state.pillar.has(p))).join('') +
+    // surfaced as a tab because with nothing tagged it is otherwise invisible
+    (untagged ? tab('__untagged', 'Untagged', untagged, state.pillar.has('__untagged')) : '');
+}
+
+function renderRail(){
+  renderSources();
+  renderPillarTabs();
+
+  for(const [field,id] of Object.entries(FIELDS)){
+    const vals = [...new Set(assets.map(a=>a[field]).filter(Boolean))].sort();
+    $('#'+id).innerHTML = vals.map(v=>{
+      const n = assets.filter(a=>a[field]===v).length;
+      const cls = v==='Student - permission pending' ? 'chip flag' : 'chip';
+      const lbl = v.replace('Student - permission pending','Permission pending')
+                   .replace('Guest - collab cleared','Guest cleared')
+                   .replace('Video - ','');
+      return `<button class="${cls}" data-field="${field}" data-val="${esc(v)}"
+        aria-pressed="${state[field].has(v)}">${esc(lbl)}<span class="n">${n}</span></button>`;
+    }).join('');
+  }
+  $('#f-flags').innerHTML = Object.entries(FLAGS).map(([k,f])=>{
+    const n = assets.filter(f.test).length;
+    return `<button class="chip flag" data-flag="${k}" aria-pressed="${state.flags.has(k)}">
+      ${f.label}<span class="n">${n}</span></button>`;
+  }).join('');
+
+  /* A group with nothing in it is noise, not vocabulary: unlike Source, these are
+     values observed in the data rather than a declared set, so an empty Rights group
+     is not a slot waiting to be filled, it is a heading over nothing. It reappears
+     the day the first record uses it. A group holding an active filter is never
+     hidden, or the filter would still apply with no way to see or clear it. */
+  document.querySelectorAll('.grp[data-grp]').forEach(d => {
+    const field = d.dataset.grp;
+    if(field === 'source') return;              // pinned nav, always shown
+    const body = d.querySelector('.grp-bd');
+    if(!body) return;
+    const hasValues = body.children.length > 0 && body.firstElementChild.children.length > 0;
+    const inUse = state[field] && state[field].size > 0;
+    d.hidden = !hasValues && !inUse;
+  });
+
+  renderBadges();
+  $('#tallyN').textContent = assets.length;
+  const hold = assets.filter(FLAGS.hold.test).length;
+  $('#tallyHold').textContent = hold ? hold+' need permission' : 'all cleared';
+}
+
+/* ── thumbnails ─────────────────────────────────
+   A record can carry an explicit `thumb` URL. Failing
+   that, YouTube links yield one from the video id.
+   Everything else falls back to a placeholder tile.  */
+function ytId(url){
+  const m = String(url||'').match(/[?&]v=([A-Za-z0-9_-]{6,})/);
+  return m ? m[1] : '';
+}
+function thumbOf(a){
+  if(a.thumb) return a.thumb;
+  const y = ytId(a.link);
+  return y ? `https://img.youtube.com/vi/${y}/mqdefault.jpg` : '';
+}
+/* Type as well as source: a carousel published straight to Instagram carries an IG
+   id, so the prefix alone would miss it and crop the cover. */
+const isCarousel = a => srcOf(a) === 'CR' || a.type === 'Carousel';
+const isLogo     = a => srcOf(a) === 'LG' || a.type === 'Logo';
+
+/* the tile shown when no image resolves — shared by grid and drawer */
+function phHTML(a){
+  const code = srcOf(a);
+  return `<span class="ph">
+    <span class="code">${esc(code)}</span>
+    <span class="lbl">${esc(SRC_NAME[code] || 'Asset')}</span>
+  </span>`;
+}
+
+function tagsOf(a){
+  const tags = [];
+  if(a.rights==='Student - permission pending') tags.push('<span class="tag hold">Permission</span>');
+  if(a.status==='Evergreen pool') tags.push('<span class="tag ever">Evergreen</span>');
+  else if(a.status && a.status!=='Active') tags.push(`<span class="tag">${esc(a.status)}</span>`);
+  return tags;
+}
+const joinMeta = m => m.map(x=>`<span>${esc(x)}</span>`).join('<span class="sep">·</span>');
+
+/* ── render: rows ───────────────────────────── */
+function rowHTML(a){
+  const meta = [
+    SRC_NAME[srcOf(a)] || srcOf(a),
+    a.category, a.pillar, a.funnel, a.location,
+    a.duration && a.duration+' min', a.posted && a.posted.slice(0,7)
+  ].filter(Boolean);
+  return `<button class="row${a.pillar?'':' untagged'}" data-id="${esc(a.id)}">
+    <span class="tick"></span>
+    <span class="rid">${esc(a.id)}</span>
+    <span class="main">
+      <span class="ttl">${a.star?'<span class="star">★</span>':''}${esc(a.title)}</span>
+      <span class="meta">${joinMeta(meta)}</span>
+    </span>
+    <span class="right">${tagsOf(a).join('')}${a.views!=null?`<span class="stat">${fmtViews(a.views)}<small>views</small></span>`:''}</span>
+  </button>`;
+}
+
+/* ── render: cards ──────────────────────────── */
+function cardHTML(a){
+  const src = thumbOf(a);
+  const meta = [a.category, a.pillar, a.views!=null ? fmtViews(a.views)+' views' : ''].filter(Boolean);
+  return `<button class="card${a.pillar?'':' untagged'}${isCarousel(a)?' is-carousel':''}${isLogo(a)?' is-logo':''}" data-id="${esc(a.id)}">
+    <span class="thumb">
+      ${phHTML(a)}
+      ${src?`<img src="${esc(src)}" alt="" loading="lazy" decoding="async">`:''}
+      ${a.star?'<span class="star">★</span>':''}
+      ${a.duration?`<span class="dur">${esc(a.duration)}</span>`:''}
+    </span>
+    <span class="ttl">${esc(a.title)}</span>
+    <span class="meta">${joinMeta(meta)}</span>
+    ${tagsOf(a).length?`<span class="tags">${tagsOf(a).join('')}</span>`:''}
+  </button>`;
+}
+
+function renderList(){
+  const out = assets.filter(matches).sort(sortFn);
+  $('#count').textContent = out.length;
+  $('#countLbl').textContent = out.length===assets.length ? 'assets' : `of ${assets.length} assets`;
+
+  const host = $('#list');
+  const results = document.querySelector('.results');
+  if(!out.length){
+    host.className = '';
+    results.classList.remove('is-grid');
+    host.innerHTML = `<div class="empty"><p>Nothing matches that.</p>
+      <small>Try fewer filters, or search a looser term. The index covers titles, notes,
+      sources, categories and locations.</small></div>`;
+    return;
+  }
+  const grid = state.view==='grid';
+
+  /* Carousels are 4:5 where everything else is 16:9, so one of them in the top row
+     leaves its neighbours with a block of dead space under them. Sink them.
+     Only under 'id', and only in the grid:
+     - 'id' order is arbitrary anyway (CR leads because C precedes E and Y), so
+       rearranging it costs nothing you asked for. Views, posted and title are
+       orderings you explicitly chose, and a layout tweak must not quietly
+       contradict the dropdown: a carousel that IS the most viewed still leads.
+     - the list has uniform row heights, so there is no problem there to fix.
+     sort() is stable, so ID order survives inside each group. */
+  if(grid && state.sort === 'id'){
+    out.sort((a,b) => (isCarousel(a)?1:0) - (isCarousel(b)?1:0));
+  }
+
+  host.className = grid ? 'grid' : '';
+  results.classList.toggle('is-grid', grid);
+  host.innerHTML = out.map(grid ? cardHTML : rowHTML).join('');
+}
+
+function setView(v){
+  state.view = v==='grid' ? 'grid' : 'list';
+  try{ localStorage.setItem('ltc-view', state.view); }catch(e){}
+  document.querySelectorAll('.seg-btn').forEach(b =>
+    b.setAttribute('aria-pressed', String(b.dataset.view===state.view)));
+  renderList();
+}
+
+/* ── panel ──────────────────────────────────── */
+function openPanel(html){
+  $('#panel').innerHTML = html; $('#panel').classList.add('on'); $('#scrim').classList.add('on');
+  document.body.style.overflow='hidden';
+  const f = $('#panel').querySelector('input,textarea,select,button'); f && f.focus();
+}
+function closePanel(){
+  $('#panel').classList.remove('on');
+  // the drawer shares the scrim, so only clear it if the drawer is not still open
+  if(!$('#rail').classList.contains('open')) $('#scrim').classList.remove('on');
+  document.body.style.overflow='';
+}
+function fact(label,val,link){
+  const empty = !val;
+  const body = empty ? 'Not recorded'
+    : link ? `<a href="${esc(val)}" target="_blank" rel="noopener">${esc(val.replace(/^https?:\/\//,''))}</a>`
+    : esc(val);
+  return `<dt>${label}</dt><dd class="${empty?'none':''}">${body}</dd>`;
+}
+function showAsset(id){
+  const a = assets.find(x=>x.id===id); if(!a) return;
+  const hold = a.rights==='Student - permission pending';
+  const src = thumbOf(a);
+  openPanel(`
+    <div class="panel-hd">
+      <div><div class="pid">${esc(a.id)}</div><h3>${a.star?'<span style="color:var(--accent)">★</span> ':''}${esc(a.title)}</h3></div>
+      <button class="x" data-close aria-label="Close">×</button>
+    </div>
+    <div class="panel-bd">
+      <div class="panel-thumb${isCarousel(a)?' is-carousel':''}${isLogo(a)?' is-logo':''}">
+        ${phHTML(a)}
+        ${src?`<img src="${esc(src)}" alt="" decoding="async">`:''}
+      </div>
+      ${hold?`<div class="alert"><b>Clear before publishing</b>Rights are marked student, permission pending. Confirm with the student before this goes into an edit or a post.</div>`:''}
+      <dl class="facts">
+        ${fact('Source',SRC_NAME[srcOf(a)]||srcOf(a))}
+        ${fact('Pillar',a.pillar)}${fact('Category',a.category)}${fact('Funnel use',a.funnel)}
+        ${fact('Asset type',a.type)}${fact('Status',a.status)}${fact('Rights',a.rights)}
+        ${fact('Quality',a.quality)}${fact('Duration',a.duration)}
+        ${fact('Views',a.views!=null?a.views.toLocaleString():'')}
+        ${fact('Posted',a.posted)}${fact('Location',a.location)}${fact('Used in',a.usedIn)}
+        ${fact('Published link',a.link,true)}${fact('Source files',a.files,true)}${fact('Added',a.added)}
+      </dl>
+      ${a.notes?`<div class="notebox">${esc(a.notes)}</div>`:''}
+    </div>
+    <div class="panel-ft">
+      ${a.link?`<a class="btn" style="text-decoration:none" href="${esc(a.link)}" target="_blank" rel="noopener">Open asset</a>`:''}
+      ${a.files?`<a class="btn ghost" style="text-decoration:none" href="${esc(a.files)}" target="_blank" rel="noopener">Source files</a>`:''}
+      <button class="btn ghost" data-edit="${esc(a.id)}">Edit details</button>
+    </div>`);
+}
+
+const SEL = {
+  pillar:['',...PILLARS],
+  funnel:['','Attract','Position','Nurture'],
+  type:['','Video - long-form','Video - short/raw','Photo','Screenshot','Ebook / PDF','Carousel','Presentation','Pitch deck','Logo','Design asset'],
+  status:['','Active','Evergreen pool','In edit','Archived'],
+  rights:['','Owned','Guest - collab cleared','Student - permission pending'],
+  quality:['','High','Medium','Low','Raw / Unreviewed'],
+};
+function opts(name,cur){
+  const extra = [...new Set(assets.map(a=>a[name]).filter(Boolean))].filter(v=>!SEL[name].includes(v));
+  return [...SEL[name],...extra].map(v=>
+    `<option value="${esc(v)}"${v===(cur||'')?' selected':''}>${v?esc(v):'—'}</option>`).join('');
+}
+function nextId(prefix){
+  const n = assets.filter(a=>a.id.startsWith(prefix+'-'))
+    .map(a=>parseInt(a.id.slice(prefix.length+1),10)||0);
+  return prefix+'-'+String((n.length?Math.max(...n):0)+1).padStart(3,'0');
+}
+function showForm(id){
+  const a = id ? assets.find(x=>x.id===id) : {};
+  const isNew = !id;
+  openPanel(`
+    <div class="panel-hd">
+      <div><div class="pid">${isNew?'New entry':esc(a.id)}</div>
+      <h3>${isNew?'Add an asset':'Edit details'}</h3></div>
+      <button class="x" data-close aria-label="Close">×</button>
+    </div>
+    <div class="panel-bd">
+      <div class="field"><label>Title</label>
+        <input id="f_title" value="${esc(a.title||'')}" placeholder="What is this asset?">
+        <div class="err" id="e_title">Give it a title so the team can find it.</div></div>
+      ${isNew?`<div class="two">
+        <div class="field"><label>ID prefix</label>
+          <select id="f_prefix">${
+            /* generated from SOURCES so a new source can never go missing here again */
+            SOURCES.map(([c,n])=>`<option value="${esc(c)}">${esc(c)} · ${esc(n)}</option>`).join('')
+          }</select>
+          <div class="hint">ID assigned on save: <b id="idPrev">—</b></div></div>
+        <div class="field"><label>Published link</label><input id="f_link" placeholder="https://"></div>
+      </div>`:`<div class="field"><label>Published link</label><input id="f_link" value="${esc(a.link||'')}" placeholder="https://"></div>`}
+      <div class="field"><label>Source files</label>
+        <input id="f_files" value="${esc(a.files||'')}" placeholder="https://">
+        <div class="hint">Where the working files live: Frame.io for footage, Drive for carousel
+          and design files. The link above is where it went live publicly.</div></div>
+      <div class="field"><label>Thumbnail URL</label>
+        <input id="f_thumb" value="${esc(a.thumb||'')}" placeholder="https://">
+        <div class="hint">Optional. YouTube assets pull their own thumbnail automatically.
+          Set this for Frame.io and anything else you want pictured in grid view.</div></div>
+      <div class="two">
+        <div class="field"><label>Pillar</label><select id="f_pillar">${opts('pillar',a.pillar)}</select></div>
+        <div class="field"><label>Funnel use</label><select id="f_funnel">${opts('funnel',a.funnel)}</select></div>
+      </div>
+      <div class="two">
+        <div class="field"><label>Asset type</label><select id="f_type">${opts('type',a.type)}</select></div>
+        <div class="field"><label>Category</label><input id="f_category" value="${esc(a.category||'')}" list="cats" placeholder="e.g. Haircut Tutorial"></div>
+      </div>
+      <div class="two">
+        <div class="field"><label>Rights</label><select id="f_rights">${opts('rights',a.rights)}</select>
+          <div class="hint">Mark student footage as permission pending until it's confirmed.</div></div>
+        <div class="field"><label>Status</label><select id="f_status">${opts('status',a.status)}</select></div>
+      </div>
+      <div class="two">
+        <div class="field"><label>Quality</label><select id="f_quality">${opts('quality',a.quality)}</select></div>
+        <div class="field"><label>Location</label><input id="f_location" value="${esc(a.location||'')}" placeholder="City or shoot"></div>
+      </div>
+      <div class="two">
+        <div class="field"><label>Duration</label><input id="f_duration" value="${esc(a.duration||'')}" placeholder="12:30"></div>
+        <div class="field"><label>Posted</label><input id="f_posted" type="date" value="${esc(a.posted||'')}"></div>
+      </div>
+      <div class="field"><label>Notes</label>
+        <textarea id="f_notes" placeholder="Why this asset matters, what it feeds, anything the next person needs.">${esc(a.notes||'')}</textarea></div>
+      <datalist id="cats">${[...new Set(assets.map(x=>x.category).filter(Boolean))].sort()
+        .map(c=>`<option value="${esc(c)}">`).join('')}</datalist>
+    </div>
+    <div class="panel-ft">
+      <button class="btn" data-save="${isNew?'':esc(a.id)}">${isNew?'Add to library':'Save changes'}</button>
+      <button class="btn ghost" data-close>Cancel</button>
+    </div>`);
+  if(isNew){
+    const upd = () => $('#idPrev').textContent = nextId($('#f_prefix').value);
+    $('#f_prefix').addEventListener('change', upd); upd();
+  }
+}
+function toast(msg){
+  const t=$('#toast'); t.textContent=msg; t.classList.add('on');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('on'),2600);
+}
+async function save(existingId){
+  const title = $('#f_title').value.trim();
+  if(!title){ $('#e_title').classList.add('on'); $('#f_title').focus(); return; }
+  const id = existingId || nextId($('#f_prefix').value);
+  const rec = {
+    id, title,
+    link:$('#f_link').value.trim(), files:$('#f_files').value.trim(),
+    thumb:$('#f_thumb').value.trim(),
+    pillar:$('#f_pillar').value, funnel:$('#f_funnel').value,
+    type:$('#f_type').value, category:$('#f_category').value.trim(), rights:$('#f_rights').value,
+    status:$('#f_status').value, quality:$('#f_quality').value, location:$('#f_location').value.trim(),
+    duration:$('#f_duration').value.trim(), posted:$('#f_posted').value, notes:$('#f_notes').value.trim(),
+    views: existingId ? (assets.find(a=>a.id===existingId)||{}).views ?? null : null,
+    star: existingId ? !!(assets.find(a=>a.id===existingId)||{}).star : false,
+    usedIn: existingId ? (assets.find(a=>a.id===existingId)||{}).usedIn || '' : '',
+    added: existingId ? (assets.find(a=>a.id===existingId)||{}).added || todayISO() : todayISO(),
+  };
+  overlay[id] = rec;
+  // render immediately from the local overlay, then report whether it actually landed
+  const ok = await saveAsset(rec);
+  rebuild(); renderRail(); renderList(); closePanel();
+  toast(ok ? (existingId?`${id} updated`:`${id} added to the library`)
+           : `${id} saved on this device only, Supabase is unreachable`);
+}
+const todayISO = () => new Date().toISOString().slice(0,10);
+
+/* ── events ─────────────────────────────────── */
+/* ── theme ──────────────────────────────────── */
+function currentTheme(){
+  // light unless the user has explicitly chosen dark — the OS is not consulted
+  return document.documentElement.getAttribute('data-theme') || 'light';
+}
+function toggleTheme(){
+  const next = currentTheme()==='dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  try{ localStorage.setItem('ltc-theme', next); }catch(e){}
+}
+
+document.addEventListener('click', e => {
+  if(e.target.closest('#themeBtn')){ toggleTheme(); return; }
+  const s = e.target.closest('.src-row');
+  if(s){
+    // Single-select: picking a source replaces the current one rather than adding
+    // to it. Clicking the active row, or All sources, goes back to everything.
+    const v = s.dataset.src;
+    state.source.clear();
+    if(v && !s.matches('[aria-pressed="true"]')) state.source.add(v);
+
+    /* Scoped tab counts stop you picking an impossible pair, but a pillar chosen
+       BEFORE the source can still be stranded: pick The Craft, then Frame.io, and the
+       two intersect to nothing. Drop the pillar only when it would empty the view, so
+       a pairing that still returns something (Ebook plus The Classroom) survives. */
+    if(state.pillar.size){
+      const scoped = state.source.size
+        ? assets.filter(a => state.source.has(srcOf(a)))
+        : assets;
+      const stillMatches = scoped.some(a => {
+        const p = (a.pillar || '').trim();
+        return state.pillar.has(p) || (state.pillar.has('__untagged') && !p);
+      });
+      if(!stillMatches) state.pillar.clear();
+    }
+
+    renderRail(); renderList(); animateList();
+    /* In drawer mode, picking a source is a complete decision, so get out of the way
+       and show the result. Filtered first, so the grid is already correct when it is
+       revealed. Only source does this: the chips below are multi-select, and closing
+       on every tap would mean reopening the drawer between each one. */
+    if($('#rail').classList.contains('open')) openRail(false);
+    return;
+  }
+  const p = e.target.closest('.src-tab');
+  if(p){
+    // same one-at-a-time rule as source
+    const v = p.dataset.pillar;
+    state.pillar.clear();
+    if(v && !p.matches('[aria-selected="true"]')) state.pillar.add(v);
+    renderRail(); renderList(); animateList(); return;
+  }
+  const c = e.target.closest('.chip');
+  if(c){
+    if(c.dataset.flag){ const k=c.dataset.flag; state.flags.has(k)?state.flags.delete(k):state.flags.add(k); }
+    else { const f=c.dataset.field, v=c.dataset.val; state[f].has(v)?state[f].delete(v):state[f].add(v); }
+    renderRail(); renderList(); return;
+  }
+  const vb = e.target.closest('.seg-btn'); if(vb){ setView(vb.dataset.view); return; }
+  const r = e.target.closest('.row,.card'); if(r){ showAsset(r.dataset.id); return; }
+  // the scrim now serves both the drawer and the detail panel, so it has to know
+  // which one it is dismissing
+  if(e.target.id==='scrim'){
+    if($('#rail').classList.contains('open')) openRail(false); else closePanel();
+    return;
+  }
+  if(e.target.closest('[data-close]')){ closePanel(); return; }
+  const ed = e.target.closest('[data-edit]'); if(ed){ showForm(ed.dataset.edit); return; }
+  const sv = e.target.closest('[data-save]'); if(sv){ save(sv.dataset.save||null); return; }
+  if(e.target.closest('#addBtn')){ showForm(null); return; }
+  if(e.target.closest('#railToggle')){ openRail(!$('#rail').classList.contains('open')); return; }
+  if(e.target.closest('#railDone')){ openRail(false); return; }
+  if(e.target.id==='clearAll'){
+    state.q=''; $('#q').value='';
+    ['source','pillar','funnel','rights','status','type','category','location','flags'].forEach(k=>state[k].clear());
+    renderRail(); renderList(); return;
+  }
+});
+/* A thumbnail that 404s (deleted video, dead link) hides itself
+   so the placeholder behind it shows through. `error` doesn't
+   bubble, hence the capture phase. */
+document.addEventListener('error', e => {
+  const img = e.target;
+  if(img.tagName==='IMG' && img.closest('.thumb,.panel-thumb')) img.classList.add('failed');
+}, true);
+
+/* The tab strip scrolls sideways once the pillars outrun the width, with the bar
+   hidden. A trackpad can swipe sideways but a plain mouse only has a vertical wheel,
+   which would leave the last few tabs unreachable. Translate one to the other. */
+$('#pilltabs').addEventListener('wheel', e => {
+  const el = e.currentTarget;
+  if(el.scrollWidth <= el.clientWidth) return;           // nothing to scroll
+  if(Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;   // already a sideways gesture
+  e.preventDefault();
+  el.scrollLeft += e.deltaY;
+}, {passive:false});
+
+$('#q').addEventListener('input', e => { state.q = e.target.value.trim(); renderList(); });
+$('#sort').addEventListener('change', e => { state.sort = e.target.value; renderList(); });
+document.addEventListener('keydown', e => {
+  if(e.key==='Escape'){ closePanel(); openRail(false); }
+  if(e.key==='/' && document.activeElement!==$('#q')){ e.preventDefault(); $('#q').focus(); }
+});
+
+/* ── layout sync ────────────────────────────────
+   The rail sticks below the search bar, whose height
+   changes when the bar wraps. Measure it rather than
+   guessing, so nothing hides under the bar.        */
+function syncBar(){
+  const h = document.querySelector('.searchbar').offsetHeight;
+  document.documentElement.style.setProperty('--bar', h+'px');
+  // the sheet only exists below 880px — leaving it "open" past that
+  // would strand the body scroll lock
+  if(innerWidth > 880 && $('#rail').classList.contains('open')) openRail(false);
+  // crossing the breakpoint changes whether Source is pinned
+  pinSourceGroup();
+}
+function animateList(){
+  const el = $('#list');
+  el.classList.remove('swap');
+  void el.offsetWidth;   // reflow, so the animation restarts rather than being ignored
+  el.classList.add('swap');
+}
+function openRail(open){
+  $('#rail').classList.toggle('open', open);
+  // the drawer no longer covers the screen, so it needs the scrim behind it
+  $('#scrim').classList.toggle('on', open);
+  $('#railToggle').setAttribute('aria-expanded', String(open));
+  document.body.style.overflow = open ? 'hidden' : '';
+}
+addEventListener('resize', syncBar);
+
+(async function init(){
+  syncBar(); initGroups();
+  let v = 'list';
+  try{ v = localStorage.getItem('ltc-view') || 'list'; }catch(e){}
+  overlay = await loadOverlay();
+  rebuild(); renderRail(); setView(v);
+})();
+</script>
